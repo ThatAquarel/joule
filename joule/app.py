@@ -8,6 +8,7 @@ from numpy import *
 import glm
 import imgui
 
+from joule.graphics.elements.axes import Axes
 import joule.graphics.shaders.load as shader
 import joule.graphics.vbo as vbo
 
@@ -32,7 +33,7 @@ class App:
         name,
         zoom_sensitivity=0.1,
         pan_sensitvity=0.001,
-        orbit_sensitivity=0.1,
+        orbit_sensitivity=0.0025,
         start_zoom=1,
     ):
         # Setting attributes of the class and starting conditions
@@ -41,7 +42,7 @@ class App:
         self.orbit_sensitivity = orbit_sensitivity
 
         # Camera movement conditions
-        self.angle_x, self.angle_y = 20.0, 125.0
+        self.angle_x, self.angle_y = np.pi / 4, np.pi / 4
         self.pan_x, self.pan_y = 0.0, 0.0
         self.last_x, self.last_y = 0.0, 0.0
         self.dragging, self.panning = False, False
@@ -52,6 +53,8 @@ class App:
         # Creates window and buttons
         self.window = self.window_init(window_size, name)
         self.imgui_impl = self.init_imgui(self.window)
+
+        self.axes = Axes()
 
         self.rendering_loop(self.window, self.imgui_impl)
 
@@ -246,7 +249,7 @@ class App:
 
         colors = np.ones((3, 3), dtype=np.float32) * 0.5
         vbo_data = np.hstack((vertices, colors)).astype(np.float32)
-        t_vbo = vbo.create_vbo(vbo_data, 6, v_ptr=3, c_ptr=3)
+        t_vbo = vbo.create_vbo(vbo_data)
 
         text = ""
 
@@ -286,6 +289,7 @@ class App:
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
 
             vbo.draw_vbo(t_vbo, GL_TRIANGLES, 3)
+            self.axes.draw()
 
             imgui.new_frame()
             imgui.begin("Test")

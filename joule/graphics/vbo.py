@@ -1,8 +1,8 @@
 from OpenGL.GL import *
 
 
-def create_vbo(data, stride, v_ptr=3, c_ptr=3):
-    stride = stride * data.itemsize
+def create_vbo(data, v_ptr=3, c_ptr=3):
+    stride = (v_ptr + c_ptr) * data.itemsize
 
     # vertex buffer object
     vao = glGenVertexArrays(1)
@@ -16,7 +16,7 @@ def create_vbo(data, stride, v_ptr=3, c_ptr=3):
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
     glEnableVertexAttribArray(0)
 
-    offset = v_ptr * stride // (v_ptr + c_ptr)
+    offset = v_ptr * data.itemsize
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(offset))
     glEnableVertexAttribArray(1)
 
