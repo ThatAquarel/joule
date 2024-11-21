@@ -1,7 +1,9 @@
 import time
 
 import glfw
+import sympy
 import numpy as np
+from numpy import *
 
 import imgui
 from imgui.integrations.glfw import GlfwRenderer
@@ -229,6 +231,8 @@ class App:
 
         text = ""
 
+        render = False
+
         while not self.window_should_close(window):
             # Updates the introdution
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -242,6 +246,27 @@ class App:
             imgui.begin("Test")
 
             changed, text = imgui.input_text("Expression", text, 256)
+            
+            x_lim, y_lim = np.pi * 3, np.pi*3
+
+            if imgui.button("evaluate"):
+                x, y = np.linspace(-x_lim, x_lim, 50), np.linspace(-y_lim, y_lim, 50)
+                x, y = np.meshgrid(x, y)
+                z = eval(text)
+
+                x = x.flatten()
+                y = y.flatten()
+                z = z.flatten()
+
+                render = True
+                ...
+            
+            if render:
+                glBegin(GL_POINTS)
+                for coord in zip(x, y, z):
+                    glColor3f(1,1,1)
+                    glVertex3f(*coord @ T)
+                glEnd()
 
             imgui.end()
 
