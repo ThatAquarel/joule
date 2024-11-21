@@ -5,7 +5,12 @@ import sympy
 import numpy as np
 from numpy import *
 
+import glm
 import imgui
+
+import joule.graphics.shaders.load as shader
+import joule.graphics.vbo as vbo
+
 from imgui.integrations.glfw import GlfwRenderer
 
 from OpenGL.GL import *
@@ -65,7 +70,7 @@ class App:
         # Gets and uses information needed to maintain and update the window
         glfw.make_context_current(window)
 
-        # Attach functions to callback 
+        # Attach functions to callback
         glfw.set_cursor_pos_callback(window, self.cursor_pos_callback)
         glfw.set_mouse_button_callback(window, self.mouse_button_callback)
         glfw.set_scroll_callback(window, self.scroll_callback)
@@ -86,7 +91,7 @@ class App:
         # Creates imgui context and renderer
         imgui.create_context()
         return GlfwRenderer(window, attach_callbacks=False)
-    
+
     def key_callback(self, *args):
         if self.imgui_impl != None and imgui.get_io().want_capture_keyboard:
             self.imgui_impl.keyboard_callback(*args)
@@ -95,7 +100,6 @@ class App:
         if self.imgui_impl != None and imgui.get_io().want_capture_keyboard:
             self.imgui_impl.char_callback(*args)
 
-        
     def mouse_button_callback(self, window, button, action, mods):
         # Forward imgui mouse events
         if self.imgui_impl != None and imgui.get_io().want_capture_mouse:
@@ -218,6 +222,8 @@ class App:
         window,
         imgui_impl,
     ):
+        shader_prog = shader.get_main_shader()
+
         # enable depth and occlusion
         glEnable(GL_DEPTH_TEST)
 
@@ -229,6 +235,19 @@ class App:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
 
+        vertices = np.array(
+            [
+                [0.0, 1.0, 1.0],  # Top vertex
+                [-1.0, -1.0, 1.0],  # Bottom-left vertex
+                [1.0, -1.0, 1.0],  # Bottom-right vertex
+            ],
+            dtype=np.float32,
+        )
+
+        colors = np.ones((3, 3), dtype=np.float32)
+        vbo_data = np.hstack((vertices, colors)).astype(np.float32)
+        t_vbo = vbo.create_vbo(vbo_data)
+
         text = ""
 
         render = False
@@ -239,15 +258,41 @@ class App:
             glClearColor(0.05, 0.05, 0.05, 1.0)
 
             # Updates the window, background, and axes
-            self.update()
-            self.draw_axes()
+            # self.update()
+            # self.draw_axes()
+
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glClearColor(0.86, 0.87, 0.87, 1.0)
+
+            glUseProgram(shader_prog)
+
+            proj = glm.ortho(
+                self.view_left * self.zoom_level,
+                self.view_right * self.zoom_level,
+                -self.zoom_level,
+                self.zoom_level,
+                -32,
+                32,
+            )
+
+            proj_loc = glGetUniformLocation(shader_prog, "cam_projection")
+            glUniformMatrix4fv(proj_loc, 1, GL_TRUE, glm.value_ptr(proj))
+
+            pos = glm.translate(glm.vec3(self.pan_x, self.pan_y, 0.0))
+            pos @= glm.rotate(self.angle_x, (1.0, 0.0, 0.0))
+            pos @= glm.rotate(self.angle_y, (0.0, 1.0, 0.0))
+
+            pos_loc = glGetUniformLocation(shader_prog, "cam_position")
+            glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
+
+            vbo.draw_vbo(t_vbo, vbo_data.itemsize * 6, GL_TRIANGLES, 3)
 
             imgui.new_frame()
             imgui.begin("Test")
 
             changed, text = imgui.input_text("Expression", text, 256)
-            
-            x_lim, y_lim = np.pi * 3, np.pi*3
+
+            x_lim, y_lim = np.pi * 3, np.pi * 3
 
             if imgui.button("evaluate"):
                 x, y = np.linspace(-x_lim, x_lim, 50), np.linspace(-y_lim, y_lim, 50)
@@ -260,11 +305,11 @@ class App:
 
                 render = True
                 ...
-            
+
             if render:
                 glBegin(GL_POINTS)
                 for coord in zip(x, y, z):
-                    glColor3f(1,1,1)
+                    glColor3f(1, 1, 1)
                     glVertex3f(*coord @ T)
                 glEnd()
 
