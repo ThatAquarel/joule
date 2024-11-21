@@ -244,9 +244,9 @@ class App:
             dtype=np.float32,
         )
 
-        colors = np.ones((3, 3), dtype=np.float32)
+        colors = np.ones((3, 3), dtype=np.float32) * 0.5
         vbo_data = np.hstack((vertices, colors)).astype(np.float32)
-        t_vbo = vbo.create_vbo(vbo_data)
+        t_vbo = vbo.create_vbo(vbo_data, 6, v_ptr=3, c_ptr=3)
 
         text = ""
 
@@ -285,7 +285,7 @@ class App:
             pos_loc = glGetUniformLocation(shader_prog, "cam_position")
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
 
-            vbo.draw_vbo(t_vbo, vbo_data.itemsize * 6, GL_TRIANGLES, 3)
+            vbo.draw_vbo(t_vbo, GL_TRIANGLES, 3)
 
             imgui.new_frame()
             imgui.begin("Test")
