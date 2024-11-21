@@ -158,36 +158,6 @@ class App:
         self.view_left = -aspect_ratio
         self.view_right = aspect_ratio
 
-    def draw_axes(self):
-        glLineWidth(1.0)
-        glBegin(GL_LINES)
-
-        # Makes all the points in the x-axis and y-axis
-        glColor3f(1.0, 1.0, 1.0)
-        for point in _axes_x:
-            glVertex3f(*(point) @ T)
-        for point in _axes_y:
-            glVertex3f(*point @ T)
-        glEnd()
-
-        # Draws the x/y/z axis grid
-        glLineWidth(2.0)
-        glBegin(GL_LINES)
-
-        glColor3f(1.0, 0.0, 0.0)
-        glVertex3f(*[-0.5, 0.0, 0.0] @ T)
-        glVertex3f(*[0.5, 0.0, 0.0] @ T)
-
-        glColor3f(0.0, 1.0, 0.0)
-        glVertex3f(*[0.0, -0.5, 0.0] @ T)
-        glVertex3f(*[0.0, 0.5, 0.0] @ T)
-
-        glColor3f(0.0, 0.0, 1.0)
-        glVertex3f(*[0.0, 0.0, -0.5] @ T)
-        glVertex3f(*[0.0, 0.0, 0.5] @ T)
-
-        glEnd()
-
     def window_should_close(self, window):
         # Returns if the window should close
         return glfw.window_should_close(window)
