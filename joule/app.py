@@ -190,22 +190,7 @@ class App:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
 
-        vertices = np.array(
-            [
-                [0.0, 1.0, 1.0],  # Top vertex
-                [-1.0, -1.0, 1.0],  # Bottom-left vertex
-                [1.0, -1.0, 1.0],  # Bottom-right vertex
-            ],
-            dtype=np.float32,
-        )
-
-        colors = np.ones((3, 3), dtype=np.float32) * 0.5
-        vbo_data = np.hstack((vertices, colors)).astype(np.float32)
-        t_vbo = vbo.create_vbo(vbo_data)
-
         text = ""
-
-        render = False
 
         while not self.window_should_close(window):
             # Updates the introdution
@@ -240,7 +225,6 @@ class App:
             pos_loc = glGetUniformLocation(shader_prog, "cam_position")
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
 
-            vbo.draw_vbo(t_vbo, GL_TRIANGLES, 3)
             self.axes.draw()
             self.graph_engine.draw()
 
@@ -249,26 +233,8 @@ class App:
 
             changed, text = imgui.input_text("Expression", text, 256)
 
-            x_lim, y_lim = np.pi * 3, np.pi * 3
-
             if imgui.button("evaluate"):
-                x, y = np.linspace(-x_lim, x_lim, 50), np.linspace(-y_lim, y_lim, 50)
-                x, y = np.meshgrid(x, y)
-                z = eval(text)
-
-                x = x.flatten()
-                y = y.flatten()
-                z = z.flatten()
-
-                render = True
-                ...
-
-            if render:
-                glBegin(GL_POINTS)
-                for coord in zip(x, y, z):
-                    glColor3f(1, 1, 1)
-                    glVertex3f(*coord @ T)
-                glEnd()
+                self.graph_engine.update_function(text, -np.pi, np.pi, -np.pi, np.pi)
 
             imgui.end()
 

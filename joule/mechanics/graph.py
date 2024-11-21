@@ -2,7 +2,7 @@ import numpy as np
 from sympy import *
 
 from joule.graphics.vbo import create_vbo, draw_vbo, update_vbo
-from OpenGL.GL import GL_POINTS
+from OpenGL.GL import GL_TRIANGLE_STRIP
 
 
 class GraphEngine:
@@ -15,9 +15,24 @@ class GraphEngine:
         self.data = np.ones((self.n, 6), dtype=np.float32)
         self.vao, self.vbo = create_vbo(self.data, return_vbo=True)
 
+    def _build_indices(self, res):
+        idx = np.empty((res - 1, 3 * res - 2), dtype=np.int32)
+        for i in range(2):
+            i_iter = np.arange(i, res - 1 + i)
+            j_iter = np.arange(res)
+            idx[:, i : 2 * res : 2] = i_iter[:, np.newaxis] * res + j_iter
+
+        i_iter = np.arange(1, res)
+        j_iter = np.arange(res - 2, 0, -1)
+        idx[:, -(res - 2) :] = i_iter[:, np.newaxis] * res + j_iter
+
+        return idx.flatten()
+
     def _build_mesh(self, res):
         mesh = np.mgrid[0 : 1 : res * 1j, 0 : 1 : res * 1j].T
-        return mesh.reshape((-1, 2))
+        samples = mesh.reshape((-1, 2))
+
+        return samples[self._build_indices(res)]
 
     def _build_color(self, res): ...
 
@@ -42,4 +57,4 @@ class GraphEngine:
         if not self.ready:
             return
 
-        draw_vbo(self.vao, GL_POINTS, self.n)
+        draw_vbo(self.vao, GL_TRIANGLE_STRIP, self.n)
