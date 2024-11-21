@@ -9,11 +9,15 @@ class GraphEngine:
     def __init__(self, res=512):
         self.ready = False
 
-        self.mesh = self._build_mesh(res)
-        self.n = len(self.mesh)
+        self.idx = self._build_indices(res)
 
-        self.data = np.ones((self.n, 6), dtype=np.float32)
-        self.vao, self.vbo = create_vbo(self.data, return_vbo=True)
+        self.eval_mesh = self._build_mesh(res)
+        self.mesh = self.eval_mesh[self.idx]
+
+        self.n = len(self.idx)
+
+        self.data = np.ones((self.n, 9), dtype=np.float32)
+        self.vao, self.vbo = create_vbo(self.data, return_vbo=True, store_normals=True)
 
     def _build_indices(self, res):
         idx = np.empty((res - 1, 3 * res - 2), dtype=np.int32)
@@ -32,7 +36,7 @@ class GraphEngine:
         mesh = np.mgrid[0 : 1 : res * 1j, 0 : 1 : res * 1j].T
         samples = mesh.reshape((-1, 2))
 
-        return samples[self._build_indices(res)]
+        return samples
 
     def _build_color(self, res): ...
 
@@ -43,15 +47,16 @@ class GraphEngine:
         d_dx = diff(f_xy, x)
         d_dy = diff(f_xy, y)
 
-        mesh = self.mesh * [x_max - x_min, y_max - y_min] + [x_min, y_min]
+        scale = lambda v: v * [x_max - x_min, y_max - y_min] + [x_min, y_min]
+
+        eval_mesh = scale(self.eval_mesh)
         f_xy_npy = lambdify([x, y], f_xy, "numpy")
 
-        self.data[:, 2] = f_xy_npy(*mesh.T)
-        self.data[:, :2] = mesh
-        update_vbo(self.vbo, self.data)
+        self.data[:, 2] = f_xy_npy(*eval_mesh.T)[self.idx]
+        self.data[:, :2] = scale(self.mesh)
 
+        update_vbo(self.vbo, self.data)
         self.ready = True
-        ...
 
     def draw(self):
         if not self.ready:

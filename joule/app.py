@@ -195,14 +195,11 @@ class App:
         while not self.window_should_close(window):
             # Updates the introdution
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            glClearColor(0.05, 0.05, 0.05, 1.0)
+            glClearColor(0.86, 0.87, 0.87, 1.0)
 
             # Updates the window, background, and axes
             # self.update()
             # self.draw_axes()
-
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            glClearColor(0.86, 0.87, 0.87, 1.0)
 
             glUseProgram(shader_prog)
 
@@ -225,7 +222,11 @@ class App:
             pos_loc = glGetUniformLocation(shader_prog, "cam_position")
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
 
-            self.axes.draw()
+            light_loc = glGetUniformLocation(shader_prog, "light_pos")
+            vec = glm.vec3(0, 0, 10)
+            glUniform3fv(light_loc, 1, glm.value_ptr(vec))
+
+            # self.axes.draw()
             self.graph_engine.draw()
 
             imgui.new_frame()
