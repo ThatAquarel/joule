@@ -17,6 +17,8 @@ from imgui.integrations.glfw import GlfwRenderer
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+from joule.mechanics.graph import GraphEngine
+
 # Drawing transformation array to transform OpenGL coordinates to right-handed physics coordinate system
 T = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 
@@ -55,6 +57,10 @@ class App:
         self.imgui_impl = self.init_imgui(self.window)
 
         self.axes = Axes()
+        self.graph_engine = GraphEngine()
+        self.graph_engine.update_function(
+            "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
+        )
 
         self.rendering_loop(self.window, self.imgui_impl)
 
@@ -166,30 +172,6 @@ class App:
         # Terminates the window
         glfw.terminate()
 
-    def update(self):
-        # Clears the color and depth buffers upon update
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glClearColor(0.05, 0.05, 0.05, 1.0)
-
-        # Creates the orthogonal projection used by the camera
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(
-            self.view_left * self.zoom_level,
-            self.view_right * self.zoom_level,
-            -self.zoom_level,
-            self.zoom_level,
-            -1024,
-            1024,
-        )
-
-        # Governs the rotation and translation of the camera
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        glTranslatef(self.pan_x, self.pan_y, 0.0)
-        glRotatef(self.angle_x, 1.0, 0.0, 0.0)
-        glRotatef(self.angle_y, 0.0, 1.0, 0.0)
-
     def rendering_loop(
         self,
         window,
@@ -260,6 +242,7 @@ class App:
 
             vbo.draw_vbo(t_vbo, GL_TRIANGLES, 3)
             self.axes.draw()
+            self.graph_engine.draw()
 
             imgui.new_frame()
             imgui.begin("Test")

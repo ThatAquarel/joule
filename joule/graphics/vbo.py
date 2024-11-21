@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 
 
-def create_vbo(data, v_ptr=3, c_ptr=3):
+def create_vbo(data, v_ptr=3, c_ptr=3, return_vbo=False):
     stride = (v_ptr + c_ptr) * data.itemsize
 
     # vertex buffer object
@@ -22,6 +22,9 @@ def create_vbo(data, v_ptr=3, c_ptr=3):
 
     glBindVertexArray(0)
     glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+    if return_vbo:
+        return vao, vbo
 
     return vao
 
