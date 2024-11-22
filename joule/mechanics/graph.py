@@ -6,7 +6,7 @@ from OpenGL.GL import GL_TRIANGLE_STRIP
 
 
 class GraphEngine:
-    def __init__(self, res=512):
+    def __init__(self, res=1024):
         self.ready = False
 
         self.idx = self._build_indices(res)
@@ -37,15 +37,39 @@ class GraphEngine:
         samples = mesh.reshape((-1, 2))
 
         return samples
+    
+    def _build_normals(self, f_xy, x, y, eval_mesh):
+        d_dx_mesh = self._d_ds_mesh(f_xy, x, y, x, eval_mesh) #  y constant, xz tan vec
+        d_dx_vec = self._d_ds_vec(d_dx_mesh, 2, 0)
+
+        d_dy_mesh = self._d_ds_mesh(f_xy, x, y, y, eval_mesh) #  x constant, yz tan vec
+        d_dy_vec = self._d_ds_vec(d_dy_mesh, 2, 1)
+
+        normals = np.cross(d_dx_vec, d_dy_vec, axis=1)
+
+        return normals
+
+    def _d_ds_mesh(self, f_xy, x, y, s, eval_mesh):
+        d_ds = diff(f_xy, s)
+        f_d_ds = lambdify([x, y], d_ds, "numpy")
+
+        return f_d_ds(*eval_mesh.T)
+    
+    def _d_ds_vec(self, d_ds_mesh, opp_idx, adj_idx):
+        vec = np.zeros((*d_ds_mesh.shape, 3), dtype=np.float32)
+        vec[:, adj_idx] = 1
+        vec[:, opp_idx] = d_ds_mesh
+
+        norms = np.linalg.norm(vec, axis=1)
+        vec = vec / norms[:, np.newaxis]
+
+        return vec
 
     def _build_color(self, res): ...
 
     def update_function(self, eqn, x_min, x_max, y_min, y_max):
         x, y = symbols("x y")
         f_xy = sympify(eqn)
-
-        d_dx = diff(f_xy, x)
-        d_dy = diff(f_xy, y)
 
         scale = lambda v: v * [x_max - x_min, y_max - y_min] + [x_min, y_min]
 
@@ -54,6 +78,7 @@ class GraphEngine:
 
         self.data[:, 2] = f_xy_npy(*eval_mesh.T)[self.idx]
         self.data[:, :2] = scale(self.mesh)
+        self.data[:, -3:] = self._build_normals(f_xy, x, y, eval_mesh)[self.idx]
 
         update_vbo(self.vbo, self.data)
         self.ready = True
