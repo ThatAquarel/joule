@@ -53,7 +53,11 @@ class GraphEngine:
         d_ds = diff(f_xy, s)
         f_d_ds = lambdify([x, y], d_ds, "numpy")
 
-        return f_d_ds(*eval_mesh.T)
+        z = f_d_ds(*eval_mesh.T)
+        if d_ds.is_constant():
+            return np.ones(len(eval_mesh)) * z
+        return z
+
     
     def _d_ds_vec(self, d_ds_mesh, opp_idx, adj_idx):
         vec = np.zeros((*d_ds_mesh.shape, 3), dtype=np.float32)
