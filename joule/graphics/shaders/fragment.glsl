@@ -1,7 +1,7 @@
 #version 330 core
 
-uniform vec3 light_pos;
 uniform vec3 view_pos;
+in vec3 light_pos;
 
 in vec3 v_color;
 in vec3 v_normal;

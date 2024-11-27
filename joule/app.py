@@ -9,6 +9,7 @@ import glm
 import imgui
 
 from joule.graphics.elements.axes import Axes
+from joule.graphics.elements.test import Test
 import joule.graphics.shaders.load as shader
 import joule.graphics.vbo as vbo
 
@@ -222,15 +223,17 @@ class App:
             pos_loc = glGetUniformLocation(shader_prog, "cam_position")
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
 
-            light_loc = glGetUniformLocation(shader_prog, "light_pos")
-            vec = glm.vec3(10, 10, 10)
-            # vec = glm.vec3(0, 0, 0)
+            light_loc = glGetUniformLocation(shader_prog, "light_pos_u")
+            vec = glm.vec4(0, 0, 10, 1)
+
             # vec = glm.vec3(100*np.cos(time.time()), 100, 100*np.sin(time.time()))
-            glUniform3fv(light_loc, 1, glm.value_ptr(vec))
+            glUniform4fv(light_loc, 1, glm.value_ptr(vec))
 
             view_loc = glGetUniformLocation(shader_prog, "view_pos")
-            view_vec = glm.vec4(0, 0, -10, 1)
-            view_pos = view_vec * glm.inverse(pos)
+            view_vec = glm.vec4(0, 0, 10, 1)
+            # view_pos = view_vec * glm.inverse(pos)
+            # view_pos = view_vec * glm.inverse(pos)
+            view_pos = view_vec * pos
             view_pos = glm.vec3(view_pos)
             glUniform3fv(view_loc, 1, glm.value_ptr(view_pos))
 

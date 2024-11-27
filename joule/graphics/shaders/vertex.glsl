@@ -7,6 +7,9 @@ layout(location = 2) in vec3 normal;
 uniform mat4 cam_projection;
 uniform mat4 cam_position;
 
+uniform vec4 light_pos_u;
+out vec3 light_pos;
+
 // out vec3 originalPosition;
 out vec3 v_color;
 out vec3 v_normal;
@@ -25,5 +28,7 @@ void main() {
     v_color = color;
     v_normal = vec3(vec4(normal, 1.0) * rh);
     v_frag_pos = vec3(vec4(position, 1.0) * rh);
+
+    light_pos = vec3(light_pos_u * inverse(cam_position));
     // originalPosition = position;
 }
