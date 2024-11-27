@@ -9,6 +9,7 @@ import glm
 import imgui
 
 from joule.graphics.elements.axes import Axes
+from joule.graphics.elements.ball import Ball
 from joule.graphics.elements.test import Test
 import joule.graphics.shaders.load as shader
 import joule.graphics.vbo as vbo
@@ -193,6 +194,8 @@ class App:
 
         text = ""
 
+        ball = Ball()
+
         while not self.window_should_close(window):
             # Updates the introdution
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -236,7 +239,8 @@ class App:
             view_pos = view_vec * pos
             view_pos = glm.vec3(view_pos)
             glUniform3fv(view_loc, 1, glm.value_ptr(view_pos))
-
+            
+            ball.draw([5,5,5])
 
             # self.axes.draw()
             self.graph_engine.draw()
