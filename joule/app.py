@@ -196,9 +196,12 @@ class App:
 
         ball = Ball()
 
+        start = time.time()
+        dt = 0
+
         while not self.window_should_close(window):
-            # Updates the introdution
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            # Updates the introdution
             glClearColor(0.86, 0.87, 0.87, 1.0)
 
             # Updates the window, background, and axes
@@ -248,6 +251,9 @@ class App:
             imgui.new_frame()
             imgui.begin("Test")
 
+            if dt:
+                imgui.text(f"{1/dt:.2f} fps")
+
             changed, text = imgui.input_text("Expression", text, 256)
 
             if imgui.button("evaluate"):
@@ -261,6 +267,12 @@ class App:
 
             glfw.swap_buffers(window)
             glfw.poll_events()
+
+
+            current = time.time()
+            dt = current - start
+            start = current
+
 
         self.terminate()
 
