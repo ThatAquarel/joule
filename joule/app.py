@@ -243,7 +243,7 @@ class App:
             view_pos = glm.vec3(view_pos)
             glUniform3fv(view_loc, 1, glm.value_ptr(view_pos))
             
-            ball.draw([5,5,5])
+            # ball.draw([5,5,5])
 
             # self.axes.draw()
             self.graph_engine.draw()

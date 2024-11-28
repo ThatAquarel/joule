@@ -55,7 +55,7 @@ class GraphEngine:
 
         z = f_d_ds(*eval_mesh.T)
         # if d_ds.is_constant():
-        if len(eval_mesh) != len(z):
+        if type(z) == int:
             return np.ones(len(eval_mesh)) * z
         return z
 
@@ -79,8 +79,12 @@ class GraphEngine:
 
         eval_mesh = scale(self.eval_mesh)
         f_xy_npy = lambdify([x, y], f_xy, "numpy")
+        z = f_xy_npy(*eval_mesh.T)
 
-        self.data[:, 2] = f_xy_npy(*eval_mesh.T)[self.idx]
+        if type(z) == int:
+            z = np.ones(len(eval_mesh)) * z
+
+        self.data[:, 2] = z[self.idx]
         self.data[:, :2] = scale(self.mesh)
         self.data[:, -3:] = self._build_normals(f_xy, x, y, eval_mesh)[self.idx]
 
