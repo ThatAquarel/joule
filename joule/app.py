@@ -119,13 +119,40 @@ class App:
         press = action == glfw.PRESS
 
         # If a given button is pressed, the screen inside the window is panned or rotated
-        if button == glfw.MOUSE_BUTTON_LEFT:
+        if button == glfw.MOUSE_BUTTON_RIGHT:
             self.dragging = press
-            shift = glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS
+            shift = glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS
             self.panning = shift
-        elif button == glfw.MOUSE_BUTTON_MIDDLE:
-            self.dragging = press
-            self.panning = press
+        elif button == glfw.MOUSE_BUTTON_LEFT:
+            xpos, ypos = glfw.get_cursor_pos(window)
+            win_x, win_y = glfw.get_window_size(window )
+            window_pos = glm.vec3(xpos, ypos, 0)
+            viewport= glm.vec4(0,0, win_x, win_y)
+
+
+            pos = glm.translate(glm.vec3(self.pan_x, self.pan_y, 0.0))
+            pos @= glm.rotate(self.angle_x, (1.0, 0.0, 0.0))
+            pos @= glm.rotate(self.angle_y, (0.0, 1.0, 0.0))
+
+            proj = glm.ortho(
+                self.view_left * self.zoom_level,
+                self.view_right * self.zoom_level,
+                -self.zoom_level,
+                self.zoom_level,
+                -32,
+                32,
+            )
+
+            rh = glm.mat4x4(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    )
+
+            self.pos_3d = glm.unProject(window_pos, rh * pos, proj, viewport)
+            print(self.pos_3d)
+            # glm.unProject(window_pos, )
 
     def cursor_pos_callback(self, window, xpos, ypos):
         # Forward imgui mouse events
@@ -247,6 +274,17 @@ class App:
 
             # self.axes.draw()
             self.graph_engine.draw()
+
+            glPointSize(20.0)
+            glBegin(GL_POINTS)
+            glVertex3f(1,0,0)
+            glVertex3f(0,2,0)
+            glVertex3f(0,0,3)
+
+            if hasattr(self, "pos_3d"):
+                glVertex3f(*self.pos_3d.to_list())
+
+            glEnd()
 
             imgui.new_frame()
             imgui.begin("Test")
