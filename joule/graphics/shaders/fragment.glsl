@@ -19,7 +19,7 @@ void main() {
 
     float diffuseStrength = 0.8;
     vec3 lightDir = normalize(light_pos - v_frag_pos);  
-    float diff = max(dot(norm, lightDir), 0.0);
+    float diff = max(abs(dot(norm, lightDir)), 0.0);
     vec3 diffuse_ = diff * light_color * diffuseStrength;
     vec3 diffuse = 0.25 + diffuse_ * 0.25;
 
@@ -32,9 +32,4 @@ void main() {
 
     vec3 result = (ambient + sqrt(diffuse) + specular) * v_color;
     fragColor = vec4(result, 1.0);
-
-    // fragColor = vec4(v_normal, 1.0);
-
-    // fragColor = vec4(originalPosition, 1.0);
-    // fragColor = vec4(v_color, 1.0);
 }
