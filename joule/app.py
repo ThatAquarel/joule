@@ -13,8 +13,6 @@ from joule.graphics.elements.ball import Ball
 from joule.graphics.elements.test import Test
 from joule.graphics.orbit_controls import CameraOrbitControls
 from joule.graphics.shader_renderer import ShaderRenderer
-import joule.graphics.shaders.load as shader
-import joule.graphics.vbo as vbo
 
 from imgui.integrations.glfw import GlfwRenderer
 
@@ -109,9 +107,9 @@ class App(CameraOrbitControls, ShaderRenderer):
 
             viewport = glm.vec4(0, 0, win_x, win_y)
 
-            pos = super().get_camera_transform()
-            proj = super().get_camera_projection()
-            rh = super().get_right_handed()
+            pos = self.get_camera_transform()
+            proj = self.get_camera_projection()
+            rh = self.get_right_handed()
 
             # modelview = glm.inverse(pos * rh * proj)
             # modelview = glm.inverse(pos * rh)
@@ -161,18 +159,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         window,
         imgui_impl,
     ):
-        shader_prog = shader.get_main_shader()
-
-        # enable depth and occlusion
-        glEnable(GL_DEPTH_TEST)
-
-        # enable antialiasing (smooth lines)
-        glEnable(GL_MULTISAMPLE)
-        glEnable(GL_POINT_SMOOTH)
-
-        # enable opacity
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
+        self.render_setup()
 
         text = ""
 
@@ -182,65 +169,13 @@ class App(CameraOrbitControls, ShaderRenderer):
         dt = 0
 
         while not self.window_should_close(window):
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            # Updates the introdution
-            glClearColor(0.86, 0.87, 0.87, 1.0)
+            self.frame_setup()
 
-            # Updates the window, background, and axes
-            # self.update()
-            # self.draw_axes()
-
-            glUseProgram(shader_prog)
-
-            # proj = glm.ortho(
-            #     *self.view_box * self.zoom_level,
-            #     -self.zoom_level,
-            #     self.zoom_level,
-            #     -32,
-            #     32,
-            # )
-
-            world = super().get_right_handed()
-            world_loc = glGetUniformLocation(shader_prog, "world_transform")
-            glUniformMatrix4fv(world_loc, 1, GL_TRUE, glm.value_ptr(world))
-
-            proj = super().get_camera_projection()
-            proj_loc = glGetUniformLocation(shader_prog, "cam_projection")
-            glUniformMatrix4fv(proj_loc, 1, GL_TRUE, glm.value_ptr(proj))
-
-            pos = super().get_camera_transform()
-            pos_loc = glGetUniformLocation(shader_prog, "cam_transform")
-            glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
-
-            light_loc = glGetUniformLocation(shader_prog, "light_pos")
-            vec = glm.vec4(0, 0, 10, 1)
-            vec = glm.inverse(pos) * vec
-            vec = glm.vec3(vec)
-            glUniform3fv(light_loc, 1, glm.value_ptr(vec))
-
-            light_loc = glGetUniformLocation(shader_prog, "light_color")
-            vec = glm.vec3(1, 1, 1)
-            glUniform3fv(light_loc, 1, glm.value_ptr(vec))
-
-            view_loc = glGetUniformLocation(shader_prog, "view_pos")
-            view_vec = glm.vec4(0, 0, 10, 1)
-            # view_pos = view_vec * glm.inverse(pos)
-            # view_pos = view_vec * glm.inverse(pos)
-            # view_pos = view_vec * pos
-            view_pos = glm.inverse(pos) * view_vec
-            view_pos = glm.vec3(view_pos)
-            glUniform3fv(view_loc, 1, glm.value_ptr(view_pos))
-
-            light_loc = glGetUniformLocation(shader_prog, "ambient_strength")
-            glUniform1f(light_loc, 0.2)
-            light_loc = glGetUniformLocation(shader_prog, "diffuse_strength")
-            glUniform1f(light_loc, 0.2)
-            light_loc = glGetUniformLocation(shader_prog, "diffuse_base")
-            glUniform1f(light_loc, 0.3)
-            light_loc = glGetUniformLocation(shader_prog, "specular_strength")
-            glUniform1f(light_loc, 0.1)
-            light_loc = glGetUniformLocation(shader_prog, "specular_reflection")
-            glUniform1f(light_loc, 64.0)
+            self.set_matrix_uniforms(
+                self.get_camera_projection(),
+                self.get_camera_transform(),
+            )
+            self.set_lighting_uniforms(glm.vec3(1, 1, 1))
 
             # ball.draw([5,5,5])
 
