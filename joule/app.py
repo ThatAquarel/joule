@@ -11,6 +11,8 @@ import imgui
 from joule.graphics.elements.axes import Axes
 from joule.graphics.elements.ball import Ball
 from joule.graphics.elements.test import Test
+from joule.graphics.orbit_controls import CameraOrbitControls
+from joule.graphics.right_handed import RightHandedAxes
 import joule.graphics.shaders.load as shader
 import joule.graphics.vbo as vbo
 
@@ -23,29 +25,14 @@ from joule.mechanics.graph import GraphEngine
 
 
 # main class for the simulation and usage of it
-class App:
+class App(CameraOrbitControls, RightHandedAxes):
     def __init__(
         self,
         window_size,
         name,
-        zoom_sensitivity=0.1,
-        pan_sensitvity=0.001,
-        orbit_sensitivity=0.0025,
-        start_zoom=1,
+        *orbit_control_args,
     ):
-        # Setting attributes of the class and starting conditions
-        self.zoom_sensitivity = zoom_sensitivity
-        self.pan_sensitvity = pan_sensitvity
-        self.orbit_sensitivity = orbit_sensitivity
-
-        # Camera movement conditions
-        self.view_angle = np.array([np.pi / 4, np.pi / 4])
-        self.view_pan = np.zeros(2)
-        self.view_box = np.zeros(2)
-        self.prev_mouse_pos = np.zeros(2)
-
-        self.dragging, self.panning = False, False
-        self.zoom_level = start_zoom
+        super().__init__(*orbit_control_args)
 
         # Creates window and buttons
         self.window = self.window_init(window_size, name)
@@ -83,9 +70,6 @@ class App:
         glfw.set_key_callback(window, self.key_callback)
         glfw.set_char_callback(window, self.char_callback)
 
-        # Most recent position of cursor
-        self.prev_mouse_pos[:] = glfw.get_cursor_pos(window)
-
         # Resizes window
         self.resize_callback(window, *window_size)
 
@@ -115,14 +99,9 @@ class App:
         if self.imgui_want_mouse():
             return
 
-        press = action == glfw.PRESS
+        super().mouse_button_callback(window, button, action, mods)
 
-        # If a given button is pressed, the screen inside the window is panned or rotated
-        if button == glfw.MOUSE_BUTTON_RIGHT:
-            self.dragging = press
-            shift = glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS
-            self.panning = shift
-        elif button == glfw.MOUSE_BUTTON_LEFT:
+        if button == glfw.MOUSE_BUTTON_LEFT:
             xpos, ypos = glfw.get_cursor_pos(window)
 
             win_x, win_y = glfw.get_window_size(window)
@@ -130,37 +109,9 @@ class App:
 
             viewport = glm.vec4(0, 0, win_x, win_y)
 
-            pos = glm.translate(glm.vec3(self.pan_x, self.pan_y, 0.0))
-            pos @= glm.rotate(self.angle_x, (1.0, 0.0, 0.0))
-            pos @= glm.rotate(self.angle_y, (0.0, 1.0, 0.0))
-
-            proj = glm.ortho(
-                self.view_left * self.zoom_level,
-                self.view_right * self.zoom_level,
-                -self.zoom_level,
-                self.zoom_level,
-                -32,
-                32,
-            )
-
-            rh = glm.mat4x4(
-                1.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-                0.0,
-                0.0,
-                1.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-            )
+            pos = super().get_camera_transform()
+            proj = super().get_camera_projection()
+            rh = super().get_right_handed()
 
             # modelview = glm.inverse(pos * rh * proj)
             # modelview = glm.inverse(pos * rh)
@@ -183,37 +134,19 @@ class App:
         if self.imgui_want_mouse():
             return
 
-        mouse_pos = [xpos, ypos]
-
-        if self.dragging:
-            ds = mouse_pos - self.prev_mouse_pos
-
-            if self.panning:
-                self.view_pan += ds * [1, -1] * self.pan_sensitvity * self.zoom_level
-            else:
-                self.view_angle += ds[::-1] * self.orbit_sensitivity
-
-        self.prev_mouse_pos[:] = mouse_pos
+        super().cursor_pos_callback(window, xpos, ypos)
 
     def scroll_callback(self, window, xoffset, yoffset):
         # Forward imgui mouse events
         if self.imgui_want_mouse():
             return
 
-        # Zooms in and out
-        if yoffset > 0:
-            self.zoom_level /= 1 + self.zoom_sensitivity
-        elif yoffset < 0:
-            self.zoom_level *= 1 + self.zoom_sensitivity
+        super().scroll_callback(window, xoffset, yoffset)
 
     def resize_callback(self, window, width, height):
         # Properly sizes the viewport window to the correct ratio
         glViewport(0, 0, width, height)
-
-        # Ensure aspect ratio is always the same as window;
-        # makes sure rendered objects aren't stretched
-        aspect_ratio = width / height if height > 0 else 1.0
-        self.view_box[:] = [-aspect_ratio, aspect_ratio]
+        super().resize_callback(window, width, height)
 
     def window_should_close(self, window):
         # Returns if the window should close
@@ -259,22 +192,19 @@ class App:
 
             glUseProgram(shader_prog)
 
-            proj = glm.ortho(
-                *self.view_box * self.zoom_level,
-                -self.zoom_level,
-                self.zoom_level,
-                -32,
-                32,
-            )
+            # proj = glm.ortho(
+            #     *self.view_box * self.zoom_level,
+            #     -self.zoom_level,
+            #     self.zoom_level,
+            #     -32,
+            #     32,
+            # )
 
+            proj = super().get_camera_projection()
             proj_loc = glGetUniformLocation(shader_prog, "cam_projection")
             glUniformMatrix4fv(proj_loc, 1, GL_TRUE, glm.value_ptr(proj))
 
-            # pos = glm.translate(glm.vec3(self.pan_x, self.pan_y, 0.0))
-            pos = glm.translate(glm.vec3(*self.view_pan, 0.0))
-            pos @= glm.rotate(self.view_angle[0], (1.0, 0.0, 0.0))
-            pos @= glm.rotate(self.view_angle[1], (0.0, 1.0, 0.0))
-
+            pos = super().get_camera_transform()
             pos_loc = glGetUniformLocation(shader_prog, "cam_position")
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
 

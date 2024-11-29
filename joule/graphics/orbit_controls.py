@@ -11,7 +11,10 @@ class CameraOrbitControls:
         orbit_sensitivity=0.0025,
         initial_zoom=1,
         clipping=[-32, 32],
+        **kwargs,
     ):
+        super().__init__(**kwargs)
+
         self._zoom_sensitivity = zoom_sensitivity
         self._pan_sensitivity = pan_sensitvity
         self._orbit_sensitivity = orbit_sensitivity
