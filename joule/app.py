@@ -12,7 +12,7 @@ from joule.graphics.elements.axes import Axes
 from joule.graphics.elements.ball import Ball
 from joule.graphics.elements.test import Test
 from joule.graphics.orbit_controls import CameraOrbitControls
-from joule.graphics.right_handed import RightHandedAxes
+from joule.graphics.shader_renderer import ShaderRenderer
 import joule.graphics.shaders.load as shader
 import joule.graphics.vbo as vbo
 
@@ -25,7 +25,7 @@ from joule.mechanics.graph import GraphEngine
 
 
 # main class for the simulation and usage of it
-class App(CameraOrbitControls, RightHandedAxes):
+class App(CameraOrbitControls, ShaderRenderer):
     def __init__(
         self,
         window_size,
@@ -200,27 +200,47 @@ class App(CameraOrbitControls, RightHandedAxes):
             #     32,
             # )
 
+            world = super().get_right_handed()
+            world_loc = glGetUniformLocation(shader_prog, "world_transform")
+            glUniformMatrix4fv(world_loc, 1, GL_TRUE, glm.value_ptr(world))
+
             proj = super().get_camera_projection()
             proj_loc = glGetUniformLocation(shader_prog, "cam_projection")
             glUniformMatrix4fv(proj_loc, 1, GL_TRUE, glm.value_ptr(proj))
 
             pos = super().get_camera_transform()
-            pos_loc = glGetUniformLocation(shader_prog, "cam_position")
+            pos_loc = glGetUniformLocation(shader_prog, "cam_transform")
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
 
-            light_loc = glGetUniformLocation(shader_prog, "light_pos_u")
+            light_loc = glGetUniformLocation(shader_prog, "light_pos")
             vec = glm.vec4(0, 0, 10, 1)
+            vec = glm.inverse(pos) * vec
+            vec = glm.vec3(vec)
+            glUniform3fv(light_loc, 1, glm.value_ptr(vec))
 
-            # vec = glm.vec3(100*np.cos(time.time()), 100, 100*np.sin(time.time()))
-            glUniform4fv(light_loc, 1, glm.value_ptr(vec))
+            light_loc = glGetUniformLocation(shader_prog, "light_color")
+            vec = glm.vec3(1, 1, 1)
+            glUniform3fv(light_loc, 1, glm.value_ptr(vec))
 
             view_loc = glGetUniformLocation(shader_prog, "view_pos")
             view_vec = glm.vec4(0, 0, 10, 1)
             # view_pos = view_vec * glm.inverse(pos)
             # view_pos = view_vec * glm.inverse(pos)
-            view_pos = view_vec * pos
+            # view_pos = view_vec * pos
+            view_pos = glm.inverse(pos) * view_vec
             view_pos = glm.vec3(view_pos)
             glUniform3fv(view_loc, 1, glm.value_ptr(view_pos))
+
+            light_loc = glGetUniformLocation(shader_prog, "ambient_strength")
+            glUniform1f(light_loc, 0.2)
+            light_loc = glGetUniformLocation(shader_prog, "diffuse_strength")
+            glUniform1f(light_loc, 0.2)
+            light_loc = glGetUniformLocation(shader_prog, "diffuse_base")
+            glUniform1f(light_loc, 0.3)
+            light_loc = glGetUniformLocation(shader_prog, "specular_strength")
+            glUniform1f(light_loc, 0.1)
+            light_loc = glGetUniformLocation(shader_prog, "specular_reflection")
+            glUniform1f(light_loc, 64.0)
 
             # ball.draw([5,5,5])
 
