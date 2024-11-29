@@ -21,13 +21,6 @@ from OpenGL.GLU import *
 
 from joule.mechanics.graph import GraphEngine
 
-# Drawing transformation array to transform OpenGL coordinates to right-handed physics coordinate system
-T = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
-
-# Sets the axes for the simulation
-_axes_y = np.mgrid[0:2, 0:1:11j, 0:1].T.reshape((-1, 3)) - [0.5, 0.5, 0.0]
-_axes_x = _axes_y[:, [1, 0, 2]]
-
 
 # main class for the simulation and usage of it
 class App:
@@ -103,17 +96,23 @@ class App:
         imgui.create_context()
         return GlfwRenderer(window, attach_callbacks=False)
 
+    def imgui_want_mouse(self):
+        return imgui.get_io().want_capture_mouse
+
+    def imgui_want_keyboard(self):
+        return imgui.get_io().want_capture_keyboard
+
     def key_callback(self, *args):
-        if self.imgui_impl != None and imgui.get_io().want_capture_keyboard:
+        if self.imgui_want_keyboard():
             self.imgui_impl.keyboard_callback(*args)
 
     def char_callback(self, *args):
-        if self.imgui_impl != None and imgui.get_io().want_capture_keyboard:
+        if self.imgui_want_keyboard():
             self.imgui_impl.char_callback(*args)
 
     def mouse_button_callback(self, window, button, action, mods):
         # Forward imgui mouse events
-        if self.imgui_impl != None and imgui.get_io().want_capture_mouse:
+        if self.imgui_want_mouse():
             return
 
         press = action == glfw.PRESS
@@ -181,7 +180,7 @@ class App:
 
     def cursor_pos_callback(self, window, xpos, ypos):
         # Forward imgui mouse events
-        if self.imgui_impl != None and imgui.get_io().want_capture_mouse:
+        if self.imgui_want_mouse():
             return
 
         # If the cursor is dragging, updates the position of the cursor in the program
@@ -199,7 +198,7 @@ class App:
 
     def scroll_callback(self, window, xoffset, yoffset):
         # Forward imgui mouse events
-        if self.imgui_impl != None and imgui.get_io().want_capture_mouse:
+        if self.imgui_want_mouse():
             return
 
         # Zooms in and out
