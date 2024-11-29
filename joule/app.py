@@ -125,10 +125,11 @@ class App:
             self.panning = shift
         elif button == glfw.MOUSE_BUTTON_LEFT:
             xpos, ypos = glfw.get_cursor_pos(window)
-            win_x, win_y = glfw.get_window_size(window )
-            window_pos = glm.vec3(xpos, ypos, 0)
-            viewport= glm.vec4(0,0, win_x, win_y)
 
+            win_x, win_y = glfw.get_window_size(window)
+            ypos = win_y - ypos
+
+            viewport = glm.vec4(0, 0, win_x, win_y)
 
             pos = glm.translate(glm.vec3(self.pan_x, self.pan_y, 0.0))
             pos @= glm.rotate(self.angle_x, (1.0, 0.0, 0.0))
@@ -144,13 +145,37 @@ class App:
             )
 
             rh = glm.mat4x4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    )
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            )
 
-            self.pos_3d = glm.unProject(window_pos, rh * pos, proj, viewport)
+            # modelview = glm.inverse(pos * rh * proj)
+            # modelview = glm.inverse(pos * rh)
+            modelview = pos * rh
+
+            depth = glReadPixels(xpos, ypos, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT)
+            print(depth)
+
+            # x_ndc = (2.0 * xpos / win_x) - 1.0
+            # y_ndc = 1.0 - (2.0 * ypos / win_y)
+
+            self.pos_3d = glm.unProject(
+                glm.vec3(xpos, ypos, depth), modelview, proj, viewport
+            )
             print(self.pos_3d)
             # glm.unProject(window_pos, )
 
@@ -269,7 +294,7 @@ class App:
             view_pos = view_vec * pos
             view_pos = glm.vec3(view_pos)
             glUniform3fv(view_loc, 1, glm.value_ptr(view_pos))
-            
+
             # ball.draw([5,5,5])
 
             # self.axes.draw()
@@ -277,9 +302,9 @@ class App:
 
             glPointSize(20.0)
             glBegin(GL_POINTS)
-            glVertex3f(1,0,0)
-            glVertex3f(0,2,0)
-            glVertex3f(0,0,3)
+            # glVertex3f(1, 0, 0)
+            # glVertex3f(0, 2, 0)
+            # glVertex3f(0, 0, 3)
 
             if hasattr(self, "pos_3d"):
                 glVertex3f(*self.pos_3d.to_list())
@@ -306,11 +331,9 @@ class App:
             glfw.swap_buffers(window)
             glfw.poll_events()
 
-
             current = time.time()
             dt = current - start
             start = current
-
 
         self.terminate()
 
