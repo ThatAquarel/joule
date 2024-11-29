@@ -175,12 +175,18 @@ class App(CameraOrbitControls, ShaderRenderer):
                 self.get_camera_projection(),
                 self.get_camera_transform(),
             )
+
             self.set_lighting_uniforms(glm.vec3(1, 1, 1))
-
-            # ball.draw([5,5,5])
-
-            # self.axes.draw()
             self.graph_engine.draw()
+
+            self.set_lighting_uniforms(
+                glm.vec3(1, 1, 1),
+                diffuse_strength=0.6,
+                diffuse_base=0.5,
+                specular_strength=1.0,
+                specular_reflection=16,
+            )
+            ball.draw([5, 5, 5])
 
             glPointSize(20.0)
             glBegin(GL_POINTS)
