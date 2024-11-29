@@ -39,13 +39,13 @@ class App:
         self.orbit_sensitivity = orbit_sensitivity
 
         # Camera movement conditions
-        self.angle_x, self.angle_y = np.pi / 4, np.pi / 4
-        self.pan_x, self.pan_y = 0.0, 0.0
-        self.last_x, self.last_y = 0.0, 0.0
+        self.view_angle = np.array([np.pi / 4, np.pi / 4])
+        self.view_pan = np.zeros(2)
+        self.view_box = np.zeros(2)
+        self.prev_mouse_pos = np.zeros(2)
+
         self.dragging, self.panning = False, False
         self.zoom_level = start_zoom
-
-        self.view_left, self.view_right = 0, 0
 
         # Creates window and buttons
         self.window = self.window_init(window_size, name)
@@ -84,7 +84,7 @@ class App:
         glfw.set_char_callback(window, self.char_callback)
 
         # Most recent position of cursor
-        self.last_x, self.last_y = glfw.get_cursor_pos(window)
+        self.prev_mouse_pos[:] = glfw.get_cursor_pos(window)
 
         # Resizes window
         self.resize_callback(window, *window_size)
@@ -183,18 +183,17 @@ class App:
         if self.imgui_want_mouse():
             return
 
-        # If the cursor is dragging, updates the position of the cursor in the program
-        if self.dragging:
-            dx = xpos - self.last_x
-            dy = ypos - self.last_y
-            if self.panning:
-                self.pan_x += dx * self.pan_sensitvity * self.zoom_level
-                self.pan_y -= dy * self.pan_sensitvity * self.zoom_level
-            else:
-                self.angle_x += dy * self.orbit_sensitivity
-                self.angle_y += dx * self.orbit_sensitivity
+        mouse_pos = [xpos, ypos]
 
-        self.last_x, self.last_y = xpos, ypos
+        if self.dragging:
+            ds = mouse_pos - self.prev_mouse_pos
+
+            if self.panning:
+                self.view_pan += ds * [1, -1] * self.pan_sensitvity * self.zoom_level
+            else:
+                self.view_angle += ds[::-1] * self.orbit_sensitivity
+
+        self.prev_mouse_pos[:] = mouse_pos
 
     def scroll_callback(self, window, xoffset, yoffset):
         # Forward imgui mouse events
@@ -214,8 +213,7 @@ class App:
         # Ensure aspect ratio is always the same as window;
         # makes sure rendered objects aren't stretched
         aspect_ratio = width / height if height > 0 else 1.0
-        self.view_left = -aspect_ratio
-        self.view_right = aspect_ratio
+        self.view_box[:] = [-aspect_ratio, aspect_ratio]
 
     def window_should_close(self, window):
         # Returns if the window should close
@@ -262,8 +260,7 @@ class App:
             glUseProgram(shader_prog)
 
             proj = glm.ortho(
-                self.view_left * self.zoom_level,
-                self.view_right * self.zoom_level,
+                *self.view_box * self.zoom_level,
                 -self.zoom_level,
                 self.zoom_level,
                 -32,
@@ -273,9 +270,10 @@ class App:
             proj_loc = glGetUniformLocation(shader_prog, "cam_projection")
             glUniformMatrix4fv(proj_loc, 1, GL_TRUE, glm.value_ptr(proj))
 
-            pos = glm.translate(glm.vec3(self.pan_x, self.pan_y, 0.0))
-            pos @= glm.rotate(self.angle_x, (1.0, 0.0, 0.0))
-            pos @= glm.rotate(self.angle_y, (0.0, 1.0, 0.0))
+            # pos = glm.translate(glm.vec3(self.pan_x, self.pan_y, 0.0))
+            pos = glm.translate(glm.vec3(*self.view_pan, 0.0))
+            pos @= glm.rotate(self.view_angle[0], (1.0, 0.0, 0.0))
+            pos @= glm.rotate(self.view_angle[1], (0.0, 1.0, 0.0))
 
             pos_loc = glGetUniformLocation(shader_prog, "cam_position")
             glUniformMatrix4fv(pos_loc, 1, GL_TRUE, glm.value_ptr(pos))
