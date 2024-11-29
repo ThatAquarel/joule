@@ -69,7 +69,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         glfw.set_char_callback(window, self.char_callback)
 
         # Resizes window
-        self.resize_callback(window, *window_size)
+        self.camera_resize_callback(window, *window_size)
 
         return window
 
@@ -97,7 +97,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         if self.imgui_want_mouse():
             return
 
-        super().mouse_button_callback(window, button, action, mods)
+        self.camera_mouse_button_callback(window, button, action, mods)
 
         if button == glfw.MOUSE_BUTTON_LEFT:
             xpos, ypos = glfw.get_cursor_pos(window)
@@ -132,19 +132,19 @@ class App(CameraOrbitControls, ShaderRenderer):
         if self.imgui_want_mouse():
             return
 
-        super().cursor_pos_callback(window, xpos, ypos)
+        self.camera_cursor_pos_callback(window, xpos, ypos)
 
     def scroll_callback(self, window, xoffset, yoffset):
         # Forward imgui mouse events
         if self.imgui_want_mouse():
             return
 
-        super().scroll_callback(window, xoffset, yoffset)
+        self.camera_scroll_callback(window, xoffset, yoffset)
 
     def resize_callback(self, window, width, height):
         # Properly sizes the viewport window to the correct ratio
         glViewport(0, 0, width, height)
-        super().resize_callback(window, width, height)
+        self.camera_resize_callback(window, width, height)
 
     def window_should_close(self, window):
         # Returns if the window should close

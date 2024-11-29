@@ -29,14 +29,14 @@ class CameraOrbitControls:
 
         self._dragging, self._panning = False, False
 
-    def mouse_button_callback(self, window, button, action, mods):
+    def camera_mouse_button_callback(self, window, button, action, mods):
         if button != glfw.MOUSE_BUTTON_RIGHT:
             return
 
         self._dragging = action == glfw.PRESS
         self._panning = glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS
 
-    def cursor_pos_callback(self, window, x_pos, y_pos):
+    def camera_cursor_pos_callback(self, window, x_pos, y_pos):
         mouse_pos = [x_pos, y_pos]
 
         if self._dragging:
@@ -50,13 +50,13 @@ class CameraOrbitControls:
 
         self._prev_mouse_pos[:] = mouse_pos
 
-    def scroll_callback(self, window, x_offset, y_offset):
+    def camera_scroll_callback(self, window, x_offset, y_offset):
         if y_offset > 0:
             self._zoom_level /= 1 + self._zoom_sensitivity
         elif y_offset < 0:
             self._zoom_level *= 1 + self._zoom_sensitivity
 
-    def resize_callback(self, window, width, height):
+    def camera_resize_callback(self, window, width, height):
         aspect_ratio = width / height if height > 0 else 1.0
         self._view_box[:] = [-aspect_ratio, aspect_ratio]
 
