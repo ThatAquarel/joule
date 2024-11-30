@@ -29,6 +29,15 @@ class GraphEngine:
         d_ds_lambda = self._function_lambda(variables, d_ds)
 
         return d_ds_lambda
+    
+    def get_f_xy(self):
+        return self._f_xy
+    
+    def get_d_dx(self):
+        return self._d_dx
+    
+    def get_d_dy(self):
+        return self._d_dy
 
     def update_function(self, equation):
         x_y, f_xy = parse_function(equation)
@@ -39,9 +48,9 @@ class GraphEngine:
         self._d_dy = self._partial_derivative_lambda(x_y, f_xy, y)
 
         self.surface.update_function(
-            self._f_xy,
-            self._d_dx,
-            self._d_dy,
+            self.get_f_xy(),
+            self.get_d_dx(),
+            self.get_d_dy(),
             [-np.pi, np.pi],
             [-np.pi, np.pi],
         )
