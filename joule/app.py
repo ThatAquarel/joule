@@ -19,7 +19,7 @@ from imgui.integrations.glfw import GlfwRenderer
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from joule.mechanics.graph import MathEngine
+from joule.compute.calculus import CalculusEngine
 
 
 # main class for the simulation and usage of it
@@ -37,7 +37,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.imgui_impl = self.init_imgui(self.window)
 
         self.axes = Axes()
-        self.graph_engine = MathEngine()
+        self.graph_engine = CalculusEngine()
         # self.graph_engine.update_function(
         #     "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
         # )

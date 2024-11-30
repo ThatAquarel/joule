@@ -4,7 +4,7 @@ import sympy as sp
 from joule.graphics.elements.surface import Surface
 
 
-class MathEngine:
+class CalculusEngine:
     def __init__(self, res=1024):
         self.surface = Surface(res=res)
 
