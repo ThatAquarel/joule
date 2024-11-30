@@ -37,15 +37,20 @@ class Surface:
 
         return idx.flatten()
 
-    def _build_normals(self, d_dx, d_dy, eval_mesh):
-        d_dx_mesh = d_dx(*eval_mesh.T) #  y constant, xz tan vec
+    def _build_normals(self, d_dx, d_dy, eval_mesh, return_derivative_vector=False):
+        d_dx_mesh = d_dx(*eval_mesh.T)  #  y constant, xz tan vec
         d_dx_vec = self._partial_derivative_tangent_vector(d_dx_mesh, 2, 0)
 
         d_dy_mesh = d_dy(*eval_mesh.T)  #  x constant, yz tan vec
         d_dy_vec = self._partial_derivative_tangent_vector(d_dy_mesh, 2, 1)
 
         normals = np.cross(d_dx_vec, d_dy_vec, axis=1)
+        normals = self._normalize(normals)
 
+        if return_derivative_vector:
+            # derivative_vector = self._normalize(d_dx_vec + d_dy_vec)
+            derivative_vector = self._derivative_tangent_vector(d_dx_mesh, d_dy_mesh)
+            return normals, derivative_vector
         return normals
 
     def _partial_derivative_tangent_vector(self, d_ds_mesh, opp_idx, adj_idx):
@@ -53,11 +58,19 @@ class Surface:
         vec[:, adj_idx] = 1
         vec[:, opp_idx] = d_ds_mesh
 
-        norms = np.linalg.norm(vec, axis=1)
-        vec = vec / norms[:, np.newaxis]
+        # norms = np.linalg.norm(vec, axis=1)
+        # vec = vec / norms[:, np.newaxis]
 
-        return vec
-    
+        return self._normalize(vec)
+
+    def _derivative_tangent_vector(self, d_dx_mesh, d_dy_mesh):
+        tangent_vec = np.ones((len(d_dx_mesh), 3))
+        tangent_vec[:, 0] = 1 / d_dx_mesh
+        tangent_vec[:, 1] = 1 / d_dy_mesh
+        tangent_vec[tangent_vec == np.inf] = 0
+
+        return self._normalize(tangent_vec)
+
     def _eval_mesh_scale(self, x_range, y_range):
         ranges = [x_range, y_range]
 
@@ -66,6 +79,13 @@ class Surface:
         minimums = np.min(ranges, axis=1)
 
         return lambda vec: vec * intervals + minimums
+
+    def _normalize(self, vectors):
+        norms = np.linalg.norm(vectors, axis=1)
+        (non_zero,) = np.where(norms)
+        vectors[non_zero] /= norms[non_zero, np.newaxis]
+
+        return vectors
 
     def update_function(
         self,

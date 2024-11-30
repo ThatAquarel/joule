@@ -8,6 +8,7 @@ from numpy import *
 import glm
 import imgui
 
+from joule.compute.mecanics import MecanicsEngine
 from joule.graphics.elements.axes import Axes
 from joule.graphics.elements.ball import Ball
 from joule.graphics.elements.test import Test
@@ -38,6 +39,7 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         self.axes = Axes()
         self.calculus_engine = CalculusEngine()
+        self.mecanics_engine = MecanicsEngine()
         # self.graph_engine.update_function(
         #     "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
         # )
@@ -102,7 +104,10 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         if button == glfw.MOUSE_BUTTON_LEFT and action == glfw.PRESS:
             rh = self.get_right_handed()
-            self.pos_3d = self.get_click_point(window, rh)
+            pos_3d = self.get_click_point(window, rh)
+
+            f_xy = self.calculus_engine.get_f_xy()
+            self.mecanics_engine.add_ball(pos_3d, f_xy, 10)
 
     def cursor_pos_callback(self, window, xpos, ypos):
         # Forward imgui mouse events
@@ -165,14 +170,24 @@ class App(CameraOrbitControls, ShaderRenderer):
             )
             ball.draw([5, 5, 5])
 
+            f_xy = self.calculus_engine.get_f_xy()
+            d_dx = self.calculus_engine.get_d_dx()
+            d_dy = self.calculus_engine.get_d_dy()
+            self.mecanics_engine.update(
+                dt, f_xy, d_dx, d_dy, self.calculus_engine.surface
+            )
+
             glPointSize(20.0)
             glBegin(GL_POINTS)
             # glVertex3f(1, 0, 0)
             # glVertex3f(0, 2, 0)
             # glVertex3f(0, 0, 3)
 
-            if hasattr(self, "pos_3d"):
-                glVertex3f(*self.pos_3d.to_list())
+            for point in self.mecanics_engine.get_render_positions():
+                glVertex3f(*point)
+
+            # if hasattr(self, "pos_3d"):
+            #     glVertex3f(*self.pos_3d.to_list())
 
             glEnd()
 
@@ -186,6 +201,8 @@ class App(CameraOrbitControls, ShaderRenderer):
 
             if imgui.button("evaluate"):
                 self.calculus_engine.update_function(text)
+                self.mecanics_engine.clear()
+                text = ""
                 # self.graph_engine.update_function(text, -np.pi, np.pi, -np.pi, np.pi)
 
             imgui.end()
