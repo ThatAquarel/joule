@@ -37,11 +37,11 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.imgui_impl = self.init_imgui(self.window)
 
         self.axes = Axes()
-        self.graph_engine = CalculusEngine()
+        self.calculus_engine = CalculusEngine()
         # self.graph_engine.update_function(
         #     "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
         # )
-        self.graph_engine.update_function("-sin(1/(sqrt(x**2 + y**2)))")
+        self.calculus_engine.update_function("-sin(1/(sqrt(x**2 + y**2)))")
 
         self.rendering_loop(self.window, self.imgui_impl)
 
@@ -154,7 +154,7 @@ class App(CameraOrbitControls, ShaderRenderer):
             )
 
             self.set_lighting_uniforms(glm.vec3(1, 1, 1))
-            self.graph_engine.draw()
+            self.calculus_engine.draw()
 
             self.set_lighting_uniforms(
                 glm.vec3(1, 1, 1),
@@ -185,7 +185,7 @@ class App(CameraOrbitControls, ShaderRenderer):
             changed, text = imgui.input_text("Expression", text, 256)
 
             if imgui.button("evaluate"):
-                self.graph_engine.update_function(text)
+                self.calculus_engine.update_function(text)
                 # self.graph_engine.update_function(text, -np.pi, np.pi, -np.pi, np.pi)
 
             imgui.end()
