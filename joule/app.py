@@ -1,7 +1,7 @@
 import time
 
 import glfw
-import sympy
+import sympy as sp
 import numpy as np
 from numpy import *
 
@@ -19,7 +19,7 @@ from imgui.integrations.glfw import GlfwRenderer
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from joule.mechanics.graph import GraphEngine
+from joule.mechanics.graph import MathEngine
 
 
 # main class for the simulation and usage of it
@@ -37,7 +37,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.imgui_impl = self.init_imgui(self.window)
 
         self.axes = Axes()
-        self.graph_engine = GraphEngine()
+        self.graph_engine = MathEngine()
         # self.graph_engine.update_function(
         #     "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
         # )
@@ -100,33 +100,9 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         self.camera_mouse_button_callback(window, button, action, mods)
 
-        if button == glfw.MOUSE_BUTTON_LEFT:
-            xpos, ypos = glfw.get_cursor_pos(window)
-
-            win_x, win_y = glfw.get_window_size(window)
-            ypos = win_y - ypos
-
-            viewport = glm.vec4(0, 0, win_x, win_y)
-
-            pos = self.get_camera_transform()
-            proj = self.get_camera_projection()
+        if button == glfw.MOUSE_BUTTON_LEFT and action == glfw.PRESS:
             rh = self.get_right_handed()
-
-            # modelview = glm.inverse(pos * rh * proj)
-            # modelview = glm.inverse(pos * rh)
-            modelview = pos * rh
-
-            depth = glReadPixels(xpos, ypos, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT)
-            print(depth)
-
-            # x_ndc = (2.0 * xpos / win_x) - 1.0
-            # y_ndc = 1.0 - (2.0 * ypos / win_y)
-
-            self.pos_3d = glm.unProject(
-                glm.vec3(xpos, ypos, depth), modelview, proj, viewport
-            )
-            print(self.pos_3d)
-            # glm.unProject(window_pos, )
+            self.pos_3d = self.get_click_point(window, rh)
 
     def cursor_pos_callback(self, window, xpos, ypos):
         # Forward imgui mouse events

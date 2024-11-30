@@ -3,6 +3,9 @@ import glfw
 import numpy as np
 
 
+from OpenGL.GL import glReadPixels, GL_DEPTH_COMPONENT, GL_FLOAT
+
+
 class CameraOrbitControls:
     def __init__(
         self,
@@ -76,3 +79,21 @@ class CameraOrbitControls:
         t = glm.rotate(t, self._view_angle[1], (0.0, 1.0, 0.0))
 
         return t
+
+    def get_click_point(self, window, world_transform):
+        xpos, ypos = glfw.get_cursor_pos(window)
+        win_x, win_y = glfw.get_window_size(window)
+
+        ypos = win_y - ypos
+
+        depth = glReadPixels(xpos, ypos, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT)
+        click = glm.vec3(xpos, ypos, depth)
+
+        pos = self.get_camera_transform()
+        modelview = pos * world_transform
+
+        proj = self.get_camera_projection()
+
+        viewport = glm.vec4(0, 0, win_x, win_y)
+
+        return glm.unProject(click, modelview, proj, viewport)
