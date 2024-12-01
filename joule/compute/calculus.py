@@ -1,12 +1,13 @@
 import numpy as np
 import sympy as sp
 
+from joule.compute.linalg import normalize
 from joule.graphics.elements.surface import Surface
 
 
 class CalculusEngine:
-    def __init__(self, res=1024):
-        self.surface = Surface(res=res)
+    def __init__(self):
+        self._x, self._y = sp.symbols("x y")
 
     def _function_lambda(self, variables, function):
         lambified = sp.lambdify(variables, function, "numpy")
@@ -23,32 +24,72 @@ class CalculusEngine:
         function,
         to_differentiate,
     ):
-        d_ds = sp.diff(function, to_differentiate)
+        d_ds = sp.diff(function, *to_differentiate)
+        d_ds = sp.simplify(d_ds)
         d_ds_lambda = self._function_lambda(variables, d_ds)
 
         return d_ds_lambda, d_ds
 
-    def get_f_xy(self):
-        return self._f_xy
+    @property
+    def x(self):
+        return self._x
 
-    def get_d_dx(self):
-        return self._d_dx
+    @property
+    def y(self):
+        return self._y
 
-    def get_d2_dx2(self):
-        return self._d2_dx2
+    def get_function(self, symbolic=False):
+        if symbolic:
+            return self._f
+        return self._f_l
 
-    def get_d_dy(self):
-        return self._d_dy
+    def get_partial(self, variable, order, symbolic=False):
+        if order not in [1, 2]:
+            raise NotImplementedError(f"Partial {order}th derivative not computed")
 
-    def get_d2_dy2(self):
-        return self._d2_dy2
+        if symbolic:
+            partials_map = {
+                self.x: [self._fx, self._fxx],
+                self.y: [self._fy, self._fyy],
+            }
+        else:
+            partials_map = {
+                self.x: [self._fx_l, self._fxx_l],
+                self.y: [self._fy_l, self._fyy_l],
+            }
 
-    def _parse_function(self, equation):
-        x, y = sp.symbols("x y")
+        if (partials := partials_map.get(variable)) is None:
+            raise ValueError(f"Unknown variable: {variable}")
 
+        return partials[order - 1]
+
+    def get_mixed_partial(self, symbolic=False):
+        if symbolic:
+            return self._fxy
+        return self._fxy_l
+
+    def _tangent_vec(self, derivative_values, axis):
+        vec = np.zeros((*derivative_values.shape, 3))
+        vec[:, 2] = derivative_values
+        vec[:, axis] = 1
+
+        return vec
+
+    def build_normals(self, point_mesh):
+        fx_val, fy_val = self._fx_l(*point_mesh.T), self._fy_l(*point_mesh.T)
+        fx_vec, fy_vec = self._tangent_vec(fx_val, 0), self._tangent_vec(fy_val, 1)
+
+        normals = np.cross(fx_vec, fy_vec)
+
+        return normalize(normals)
+
+    def build_values(self, point_mesh):
+        return self._f_l(*point_mesh.T)
+
+    def _parse_function(self, text):
         allowed = {
-            "x": x,
-            "y": y,
+            "x": self.x,
+            "y": self.y,
             "sin": sp.sin,
             "asin": sp.asin,
             "cos": sp.cos,
@@ -68,36 +109,40 @@ class CalculusEngine:
             "floor": sp.floor,
         }
 
-        f_xy = sp.sympify(
-            equation,
+        return sp.sympify(
+            text,
             locals=allowed,
             rational=True,
         )
 
-        return (x, y), f_xy
-
     def update_function(self, equation):
-        x_y, f_xy = self._parse_function(equation)
+        symbols = self.x, self.y
 
-        self.x_y, self.f_xy = x_y, f_xy
+        self._f = self._parse_function(equation)
+        self._f_l = self._function_lambda(symbols, self._f)
 
-        self._f_xy = self._function_lambda(x_y, f_xy)
-        x, y = x_y
-        self._d_dx, d_dx = self._partial_derivative_lambda(x_y, f_xy, x)
-        self._d2_dx2, _ = self._partial_derivative_lambda(x_y, d_dx, x)
-
-        self._d_dy, d_dy = self._partial_derivative_lambda(x_y, f_xy, y)
-        self._d2_dy2, _ = self._partial_derivative_lambda(x_y, d_dy, y)
-
-        self.surface.update_function(
-            self.get_f_xy(),
-            self.get_d_dx(),
-            self.get_d_dy(),
-            # [-4 * np.pi, 4 * np.pi],
-            # [-4 * np.pi, 4 * np.pi],
-            [-np.pi, np.pi],
-            [-np.pi, np.pi],
+        self._fx_l, self._fx = self._partial_derivative_lambda(
+            symbols,
+            self._f,
+            [self.x],
+        )
+        self._fxx_l, self._fxx = self._partial_derivative_lambda(
+            symbols,
+            self._fx,
+            [self.x],
         )
 
-    def draw(self):
-        self.surface.draw()
+        self._fy_l, self._fy = self._partial_derivative_lambda(
+            symbols,
+            self._f,
+            [self.y],
+        )
+        self._fyy_l, self._fyy = self._partial_derivative_lambda(
+            symbols,
+            self._fy,
+            [self.y],
+        )
+
+        self._fxy_l, self._fxy = self._partial_derivative_lambda(
+            symbols, self._fy, [self.x, self.y]
+        )

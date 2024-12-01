@@ -11,6 +11,7 @@ import imgui
 from joule.compute.mecanics import MecanicsEngine
 from joule.graphics.elements.axes import Axes
 from joule.graphics.elements.ball import Ball
+from joule.graphics.elements.surface import Surface
 from joule.graphics.elements.test import Test
 from joule.graphics.orbit_controls import CameraOrbitControls
 from joule.graphics.shader_renderer import ShaderRenderer
@@ -40,12 +41,17 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.axes = Axes()
         self.calculus_engine = CalculusEngine()
         self.mecanics_engine = MecanicsEngine()
+
+        self.surface = Surface(res=1024)
+        self.update_function(
+            "-sin(1/(sqrt(x**2 + y**2)))", [-np.pi, np.pi], [-np.pi, np.pi]
+        )
         # self.graph_engine.update_function(
         #     "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
         # )
         # self.calculus_engine.update_function("-sin(1/(sqrt(x**2 + y**2)))")
         # self.calculus_engine.update_function("cos(x*y)")
-        self.calculus_engine.update_function("-sqrt(1-x*x -y*y)")
+        # self.calculus_engine.update_function("-sqrt(1-x*x -y*y)")
 
         self.rendering_loop(self.window, self.imgui_impl)
 
@@ -164,7 +170,7 @@ class App(CameraOrbitControls, ShaderRenderer):
             )
 
             self.set_lighting_uniforms(glm.vec3(1, 1, 1))
-            self.calculus_engine.draw()
+            self.surface.draw()
 
             self.set_lighting_uniforms(
                 glm.vec3(1, 1, 1),
@@ -174,38 +180,38 @@ class App(CameraOrbitControls, ShaderRenderer):
                 specular_reflection=16,
             )
 
-            f_xy = self.calculus_engine.get_f_xy()
-            d_dx = self.calculus_engine.get_d_dx()
-            d2_dx2 = self.calculus_engine.get_d2_dx2()
-            d_dy = self.calculus_engine.get_d_dy()
-            d2_dy2 = self.calculus_engine.get_d2_dy2()
+            # f_xy = self.calculus_engine.get_f_xy()
+            # d_dx = self.calculus_engine.get_d_dx()
+            # d2_dx2 = self.calculus_engine.get_d2_dx2()
+            # d_dy = self.calculus_engine.get_d_dy()
+            # d2_dy2 = self.calculus_engine.get_d2_dy2()
 
-            if hasattr(self, "pos_3d"):
-                self.mecanics_engine.update(
-                    self.pos_3d,
-                    self.calculus_engine,
-                    dt,
-                    f_xy,
-                    d_dx,
-                    d_dy,
-                    d2_dx2,
-                    d2_dy2,
-                    self.calculus_engine.surface,
-                )
-            else:
-                self.mecanics_engine.update(
-                    [0, 0, 0],
-                    self.calculus_engine,
-                    dt,
-                    f_xy,
-                    d_dx,
-                    d_dy,
-                    d2_dx2,
-                    d2_dy2,
-                    self.calculus_engine.surface,
-                )
+            # if hasattr(self, "pos_3d"):
+            #     self.mecanics_engine.update(
+            #         self.pos_3d,
+            #         self.calculus_engine,
+            #         dt,
+            #         f_xy,
+            #         d_dx,
+            #         d_dy,
+            #         d2_dx2,
+            #         d2_dy2,
+            #         self.calculus_engine.surface,
+            #     )
+            # else:
+            #     self.mecanics_engine.update(
+            #         [0, 0, 0],
+            #         self.calculus_engine,
+            #         dt,
+            #         f_xy,
+            #         d_dx,
+            #         d_dy,
+            #         d2_dx2,
+            #         d2_dy2,
+            #         self.calculus_engine.surface,
+            #     )
 
-            ball.draw(self.mecanics_engine.get_render_positions(), self.calculus_engine)
+            # ball.draw(self.mecanics_engine.get_render_positions(), self.calculus_engine)
 
             imgui.new_frame()
             imgui.begin("Test")
@@ -216,10 +222,8 @@ class App(CameraOrbitControls, ShaderRenderer):
             changed, text = imgui.input_text("Expression", text, 256)
 
             if imgui.button("evaluate"):
-                self.calculus_engine.update_function(text)
-                self.mecanics_engine.clear()
+                self.update_function(text, [-np.pi, np.pi], [-np.pi, np.pi])
                 text = ""
-                # self.graph_engine.update_function(text, -np.pi, np.pi, -np.pi, np.pi)
 
             imgui.end()
 
@@ -235,6 +239,17 @@ class App(CameraOrbitControls, ShaderRenderer):
             start = current
 
         self.terminate()
+
+    def update_function(self, text, x_domain, y_domain):
+        self.calculus_engine.update_function(text)
+        self.mecanics_engine.clear()
+
+        point_mesh = self.surface.get_point_mesh(x_domain, y_domain)
+        self.surface.update_function(
+            point_mesh,
+            self.calculus_engine.build_values(point_mesh),
+            self.calculus_engine.build_normals(point_mesh),
+        )
 
 
 # run the app
