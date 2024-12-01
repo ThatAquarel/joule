@@ -145,7 +145,7 @@ class MecanicsEngine:
             slope1 = np.dot(gradient1, u)
 
             # k = slope1 / sp.Pow(1 + slope0**2, sp.Rational(3 / 2))
-            k = slope1 / (1 + slope0 * slope0) ** (3 / 2)
+            k = np.abs(slope1) / (1 + slope0 * slope0) ** (3 / 2)
 
             # curvatures.append(k.evalf())
             # curvatures.append(np.abs(k))
