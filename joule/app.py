@@ -168,28 +168,37 @@ class App(CameraOrbitControls, ShaderRenderer):
                 specular_strength=1.0,
                 specular_reflection=16,
             )
-            ball.draw([5, 5, 5])
 
             f_xy = self.calculus_engine.get_f_xy()
             d_dx = self.calculus_engine.get_d_dx()
+            d2_dx2 = self.calculus_engine.get_d2_dx2()
             d_dy = self.calculus_engine.get_d_dy()
+            d2_dy2 = self.calculus_engine.get_d2_dy2()
             self.mecanics_engine.update(
-                dt, f_xy, d_dx, d_dy, self.calculus_engine.surface
+                self.calculus_engine,
+                dt,
+                f_xy,
+                d_dx,
+                d_dy,
+                d2_dx2,
+                d2_dy2,
+                self.calculus_engine.surface,
             )
 
-            glPointSize(20.0)
-            glBegin(GL_POINTS)
+            # glPointSize(20.0)
+            # glBegin(GL_POINTS)
             # glVertex3f(1, 0, 0)
             # glVertex3f(0, 2, 0)
             # glVertex3f(0, 0, 3)
 
             for point in self.mecanics_engine.get_render_positions():
-                glVertex3f(*point)
+                ball.draw(point)
+                # glVertex3f(*point)
 
             # if hasattr(self, "pos_3d"):
             #     glVertex3f(*self.pos_3d.to_list())
 
-            glEnd()
+            # glEnd()
 
             imgui.new_frame()
             imgui.begin("Test")

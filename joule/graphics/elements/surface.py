@@ -37,7 +37,14 @@ class Surface:
 
         return idx.flatten()
 
-    def _build_normals(self, d_dx, d_dy, eval_mesh, return_derivative_vector=False):
+    def _build_normals(
+        self,
+        d_dx,
+        d_dy,
+        eval_mesh,
+        return_derivative_vector=False,
+        normalize=True,
+    ):
         d_dx_mesh = d_dx(*eval_mesh.T)  #  y constant, xz tan vec
         d_dx_vec = self._partial_derivative_tangent_vector(d_dx_mesh, 2, 0)
 
@@ -45,11 +52,15 @@ class Surface:
         d_dy_vec = self._partial_derivative_tangent_vector(d_dy_mesh, 2, 1)
 
         normals = np.cross(d_dx_vec, d_dy_vec, axis=1)
-        normals = self._normalize(normals)
+
+        if normalize:
+            normals = self._normalize(normals)
 
         if return_derivative_vector:
             # derivative_vector = self._normalize(d_dx_vec + d_dy_vec)
-            derivative_vector = self._derivative_tangent_vector(d_dx_mesh, d_dy_mesh)
+            derivative_vector = self._derivative_tangent_vector(
+                d_dx_mesh, d_dy_mesh, normalize=normalize
+            )
             return normals, derivative_vector
         return normals
 
@@ -63,13 +74,15 @@ class Surface:
 
         return self._normalize(vec)
 
-    def _derivative_tangent_vector(self, d_dx_mesh, d_dy_mesh):
+    def _derivative_tangent_vector(self, d_dx_mesh, d_dy_mesh, normalize=True):
         tangent_vec = np.ones((len(d_dx_mesh), 3))
         tangent_vec[:, 0] = 1 / d_dx_mesh
         tangent_vec[:, 1] = 1 / d_dy_mesh
         tangent_vec[tangent_vec == np.inf] = 0
 
-        return self._normalize(tangent_vec)
+        if normalize:
+            return self._normalize(tangent_vec)
+        return tangent_vec
 
     def _eval_mesh_scale(self, x_range, y_range):
         ranges = [x_range, y_range]

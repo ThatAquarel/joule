@@ -1,3 +1,4 @@
+import sympy as sp
 import numpy as np
 
 from OpenGL.GL import *
@@ -8,8 +9,9 @@ class MecanicsEngine:
         self._compute_state = np.zeros(buffer_size, dtype=bool)
         self._m, self._s, self._v, self._a = np.zeros((4, buffer_size, 3))
 
-        self._gravity = np.array([0, 0, -9.81])
-        self._friction = 0.25
+        # self._gravity = np.array([0, 0, -9.81])
+        self._gravity = np.array([0, 0, -25])
+        self._friction = 0.05
 
     def get_gravity(self):
         return self._gravity
@@ -47,7 +49,7 @@ class MecanicsEngine:
     def clear(self):
         self._compute_state[:] = False
 
-    def update(self, dt, f_xy, d_dx, d_dy, surface):
+    def update(self, calculus_engine, dt, f_xy, d_dx, d_dy, d2_dx2, d2_dy2, surface):
         if self._compute_state.sum() == 0:
             return
 
@@ -59,46 +61,67 @@ class MecanicsEngine:
             d_dx, d_dy, xy, return_derivative_vector=True
         )
 
-        # d_dx_mesh = d_dx(*xy.T)  #  y constant, xz tan vec
-        # d_dx_vec = surface._partial_derivative_tangent_vector(d_dx_mesh, 2, 0)
-
-        # d_dy_mesh = d_dy(*xy.T)  #  x constant, yz tan vec
-        # d_dy_vec = surface._partial_derivative_tangent_vector(d_dy_mesh, 2, 1)
-
-        # tangent_vec = np.ones(d_dx_vec.shape)
-        # tangent_vec[:, 0] = 1 / d_dx_mesh
-        # tangent_vec[:, 1] = 1 / d_dy_mesh
-
         sign = -np.sign(tangent[:, -1])
         tangent_downward = tangent * sign[:, np.newaxis]
 
         Fg = self.get_gravity()
-        Fg_y = np.vecdot(Fg, normal)[:, np.newaxis] * normal
+        # Fg_y = np.vecdot(Fg, normal)[:, np.newaxis] * normal
         Fg_x = np.vecdot(Fg, tangent_downward)[:, np.newaxis] * tangent_downward
-        N = np.linalg.norm(Fg_y)
+        # N = np.linalg.norm(Fg_y)
+        # fk_dir = surface._normalize(-self._v[self._compute_state])
+        # fk_x = self.get_friction() * N * fk_dir
+
+        ################################
+        ################################
+        ################################
+
+        (x, y), f = calculus_engine.x_y, calculus_engine.f_xy
+        fx, fy = sp.diff(f, x), sp.diff(f, y)
+        fxx, fyy = sp.diff(fx, x), sp.diff(fy, y)
+        fxy = sp.diff(fx, y)
+
+        curvature = []
+        for u, (x0, y0) in zip(surface._normalize(v), xy):
+            u = u[:2]
+            replace = {x: x0, y: y0}
+
+            gradient0 = np.array([fx.subs(replace), fy.subs(replace)])
+
+            slope0 = np.dot(gradient0, u)
+            slope1 = (
+                fxx.subs(replace) * u[0] ** 2
+                + 2 * fxy.subs(replace) * u[0] * u[1]
+                + fyy.subs(replace) * u[1] ** 2
+            )
+
+            k = slope1 / sp.Pow(1 + slope0**2, sp.Rational(3 / 2))
+            curvature.append(k)
+
+        curvature = np.nan_to_num(np.abs(curvature).astype(np.float64))
+
+        Fnet_y = (
+            (np.linalg.norm(v, axis=1) ** 2 * curvature)[:, np.newaxis] * normal * m
+        )
+
+        N_y = Fnet_y - np.vecdot(Fg, normal)[:, np.newaxis] * normal
+        N = np.linalg.norm(N_y, axis=1)
         fk_dir = surface._normalize(-self._v[self._compute_state])
         fk_x = self.get_friction() * N * fk_dir
-
-        glBegin(GL_LINES)
-        glVertex3f(*self._s[0])
-        glVertex3f(*Fg_y[0] + self._s[0])
-        glEnd()
-
-        glBegin(GL_LINES)
-        glVertex3f(*self._s[0])
-        glVertex3f(*fk_x[0] + self._s[0])
-        glEnd()
-
         Fnet_x = Fg_x + fk_x
-        # glBegin(GL_LINES)
-        # glVertex3f(*self._s[0])
-        # glVertex3f(*Fnet_x[0] + self._s[0])
-        # glEnd()
 
         a_x = Fnet_x / m
+        a_y = Fnet_y / m
 
-        # self._a[self._compute_state] = a_x
-        self._v[self._compute_state] += a_x * dt
+        glBegin(GL_LINES)
+        glVertex3f(*self._s[0])
+        glVertex3f(*self._s[0] + a_x[0])
+        glVertex3f(*self._s[0])
+        glVertex3f(*self._s[0] + a_y[0])
+        glEnd()
+
+        a = a_x + a_y
+
+        self._v[self._compute_state] += a * dt
         self._s[self._compute_state] += self._v[self._compute_state] * dt
 
         self._s[self._compute_state, 2] = f_xy(*self._s[self._compute_state, :2].T)
