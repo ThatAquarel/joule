@@ -58,9 +58,10 @@ class Surface:
 
         if return_derivative_vector:
             # derivative_vector = self._normalize(d_dx_vec + d_dy_vec)
-            derivative_vector = self._derivative_tangent_vector(
-                d_dx_mesh, d_dy_mesh, normalize=normalize
-            )
+            derivative_vector = d_dx_mesh, d_dx_vec, d_dy_mesh, d_dy_vec
+            # derivative_vector = self._derivative_tangent_vector(
+            #     d_dx_vec, d_dy_mesh, normalize=normalize
+            # )
             return normals, derivative_vector
         return normals
 
@@ -72,7 +73,8 @@ class Surface:
         # norms = np.linalg.norm(vec, axis=1)
         # vec = vec / norms[:, np.newaxis]
 
-        return self._normalize(vec)
+        # return self._normalize(vec)
+        return vec
 
     def _derivative_tangent_vector(self, d_dx_mesh, d_dy_mesh, normalize=True):
         tangent_vec = np.ones((len(d_dx_mesh), 3))

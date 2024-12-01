@@ -93,8 +93,10 @@ class CalculusEngine:
             self.get_f_xy(),
             self.get_d_dx(),
             self.get_d_dy(),
-            [-4 * np.pi, 4 * np.pi],
-            [-4 * np.pi, 4 * np.pi],
+            # [-4 * np.pi, 4 * np.pi],
+            # [-4 * np.pi, 4 * np.pi],
+            [-np.pi, np.pi],
+            [-np.pi, np.pi],
         )
 
     def draw(self):

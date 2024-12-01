@@ -35,16 +35,32 @@ class Ball:
         self.n = len(vertices)
         self.data = np.ones((len(vertices), 9), dtype=np.float32)
         # self.data[:, :3] = vertices * 0.125 + [1, 1, 1]
-        self.data[:, :3] = vertices * 0.125
+        # self.data[:, :3] = vertices * 0.125
+        self.data[:, :3] = vertices
         self.data[:, 3:6] = [0.25, 0.25, 0.25]
         self.data[:, 6:9] = vertices
 
         self.vao, self.vbo = create_vbo(self.data, return_vbo=True, store_normals=True)
 
-    def draw(self, s):
+    def _draw_ball(self, r, s):
         data = np.copy(self.data)
-        data[:, :3] += s
+        data[:, :3] = data[:, :3] * r + s
 
         update_vbo(self.vbo, data)
-
         draw_vbo(self.vao, GL_TRIANGLE_STRIP, self.n)
+
+    def draw(self, positions, calculus_engine):
+        if not (n := len(positions)):
+            return
+
+        d_dx = calculus_engine.get_d_dx()
+        d_dy = calculus_engine.get_d_dy()
+
+        radii = np.ones(n) * 0.125
+        normals = calculus_engine.surface._build_normals(
+            d_dx, d_dy, positions[:, :2], normalize=True
+        )
+
+        positions += normals * radii[:, np.newaxis]
+        for pos, radius in zip(positions, radii):
+            self._draw_ball(radius, pos)

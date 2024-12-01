@@ -43,7 +43,9 @@ class App(CameraOrbitControls, ShaderRenderer):
         # self.graph_engine.update_function(
         #     "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
         # )
-        self.calculus_engine.update_function("-sin(1/(sqrt(x**2 + y**2)))")
+        # self.calculus_engine.update_function("-sin(1/(sqrt(x**2 + y**2)))")
+        # self.calculus_engine.update_function("cos(x*y)")
+        self.calculus_engine.update_function("-sqrt(1-x*x -y*y)")
 
         self.rendering_loop(self.window, self.imgui_impl)
 
@@ -116,6 +118,9 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         self.camera_cursor_pos_callback(window, xpos, ypos)
 
+        rh = self.get_right_handed()
+        self.pos_3d = self.get_click_point(window, rh)
+
     def scroll_callback(self, window, xoffset, yoffset):
         # Forward imgui mouse events
         if self.imgui_want_mouse():
@@ -174,31 +179,33 @@ class App(CameraOrbitControls, ShaderRenderer):
             d2_dx2 = self.calculus_engine.get_d2_dx2()
             d_dy = self.calculus_engine.get_d_dy()
             d2_dy2 = self.calculus_engine.get_d2_dy2()
-            self.mecanics_engine.update(
-                self.calculus_engine,
-                dt,
-                f_xy,
-                d_dx,
-                d_dy,
-                d2_dx2,
-                d2_dy2,
-                self.calculus_engine.surface,
-            )
 
-            # glPointSize(20.0)
-            # glBegin(GL_POINTS)
-            # glVertex3f(1, 0, 0)
-            # glVertex3f(0, 2, 0)
-            # glVertex3f(0, 0, 3)
+            if hasattr(self, "pos_3d"):
+                self.mecanics_engine.update(
+                    self.pos_3d,
+                    self.calculus_engine,
+                    dt,
+                    f_xy,
+                    d_dx,
+                    d_dy,
+                    d2_dx2,
+                    d2_dy2,
+                    self.calculus_engine.surface,
+                )
+            else:
+                self.mecanics_engine.update(
+                    [0, 0, 0],
+                    self.calculus_engine,
+                    dt,
+                    f_xy,
+                    d_dx,
+                    d_dy,
+                    d2_dx2,
+                    d2_dy2,
+                    self.calculus_engine.surface,
+                )
 
-            for point in self.mecanics_engine.get_render_positions():
-                ball.draw(point)
-                # glVertex3f(*point)
-
-            # if hasattr(self, "pos_3d"):
-            #     glVertex3f(*self.pos_3d.to_list())
-
-            # glEnd()
+            ball.draw(self.mecanics_engine.get_render_positions(), self.calculus_engine)
 
             imgui.new_frame()
             imgui.begin("Test")

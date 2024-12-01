@@ -22,10 +22,24 @@ def test(x0, y0, v):
     replace = {x: x0, y: y0}
 
     gradient0 = np.array([fx.subs(replace), fy.subs(replace)])
-    gradient1 = np.array([fxx.subs(replace), fyy.subs(replace)])
+    gradient1 = np.array(
+        [
+            fxx.subs(replace) * u[0] + fxy.subs(replace) * u[1],
+            fyy.subs(replace) * u[1] + fxy.subs(replace) * u[0],
+        ]
+    )
+
+    hessian = np.array(
+        [
+            [fxx.subs(replace), fxy.subs(replace)],
+            [fxy.subs(replace), fyy.subs(replace)],
+        ]
+    )
+    gradient1 = np.dot(hessian, u)
 
     slope0 = np.dot(gradient0, u)
     slope1 = np.dot(gradient1, u)
+    # slope1 = np.dot(, u)
 
     slope1_ = (
         fxx.subs(replace) * u[0] ** 2
@@ -42,7 +56,7 @@ def test(x0, y0, v):
     print(f"slope1: {slope1}")
     print(f"slope1 with expansion: {slope1_}")
 
-    k = slope1_ / sp.Pow(1 + slope0**2, sp.Rational(3 / 2))
+    k = slope1 / sp.Pow(1 + slope0**2, sp.Rational(3 / 2))
     print(f"curvature {k}")
     print(f"radius {1/k}")
     print()
