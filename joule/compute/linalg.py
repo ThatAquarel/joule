@@ -5,7 +5,7 @@ def normalize(vectors):
     vectors = np.copy(vectors)
 
     norms = np.linalg.norm(vectors, axis=1)
-    (non_zero,) = np.where(norms)
+    non_zero = norms != 0
     vectors[non_zero] /= norms[non_zero, np.newaxis]
 
     return vectors

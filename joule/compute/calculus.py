@@ -86,6 +86,25 @@ class CalculusEngine:
     def build_values(self, point_mesh):
         return self._f_l(*point_mesh.T)
 
+    def _build_hessian(self, point_mesh):
+        fxx_val, fyy_val = self._fxx_l(*point_mesh.T), self._fyy_l(*point_mesh.T)
+        fxy_val = self._fxy_l(*point_mesh.T)
+
+        hessian = np.array([[fxx_val, fxy_val], [fxy_val, fyy_val]])
+
+        return hessian.T
+
+    def build_gradient_first(self, point_mesh):
+        fx_val, fy_val = self._fx_l(*point_mesh.T), self._fy_l(*point_mesh.T)
+        gradient = np.array([fx_val, fy_val])
+
+        return gradient.T
+
+    def build_gradient_second(self, point_mesh):
+        hessian = self._build_hessian(point_mesh)
+
+        return np.matmul(hessian, point_mesh[:, :, np.newaxis]).squeeze(-1)
+
     def _parse_function(self, text):
         allowed = {
             "x": self.x,

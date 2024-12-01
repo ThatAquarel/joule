@@ -2,6 +2,8 @@ from itertools import product
 
 import numpy as np
 
+from joule.compute.calculus import CalculusEngine
+from joule.compute.linalg import column_wise
 from joule.graphics.vbo import create_vbo, draw_vbo, update_vbo
 from OpenGL.GL import GL_TRIANGLE_STRIP
 
@@ -49,18 +51,15 @@ class Ball:
         update_vbo(self.vbo, data)
         draw_vbo(self.vao, GL_TRIANGLE_STRIP, self.n)
 
-    def draw(self, positions, calculus_engine):
+    def draw(self, positions, calculus_engine: CalculusEngine):
         if not (n := len(positions)):
             return
 
-        d_dx = calculus_engine.get_d_dx()
-        d_dy = calculus_engine.get_d_dy()
+        point_mesh = positions[:, :2]
+        normals = calculus_engine.build_normals(point_mesh)
 
         radii = np.ones(n) * 0.125
-        normals = calculus_engine.surface._build_normals(
-            d_dx, d_dy, positions[:, :2], normalize=True
-        )
 
-        positions += normals * radii[:, np.newaxis]
+        positions += normals * column_wise(radii)
         for pos, radius in zip(positions, radii):
             self._draw_ball(radius, pos)

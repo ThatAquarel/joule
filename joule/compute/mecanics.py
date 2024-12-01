@@ -3,9 +3,9 @@ import numpy as np
 
 from OpenGL.GL import *
 
+from joule.compute.calculus import CalculusEngine
 from joule.compute.linalg import (
     column_wise,
-    get_basis,
     magnitude,
     normalize,
     vec_cross,
@@ -16,11 +16,12 @@ from joule.compute.linalg import (
 class MecanicsEngine:
     def __init__(self, buffer_size=16):
         self._compute_state = np.zeros(buffer_size, dtype=bool)
-        self._m, self._s, self._v, self._a = np.zeros((4, buffer_size, 3))
+        self._s, self._v = np.zeros((2, buffer_size, 3))
+        self._m = np.zeros(buffer_size)
 
         # self._gravity = np.array([0, 0, -9.81])
         self._gravity = np.array([0, 0, -25])
-        self._friction = 0.25
+        self._friction = 0.2
 
     def get_gravity(self):
         return self._gravity
@@ -42,12 +43,11 @@ class MecanicsEngine:
             print(f"mecanics buffer full: overwrite {i} (furthest)")
         return i
 
-    def add_ball(self, select_position, f_xy, mass):
-        x, y, _ = select_position
-        ball_position = [x, y, f_xy(x, y)]
-
+    def add_ball(self, position, mass):
         i = self._get_available_compute_spot()
-        self._m[i], self._s[i], self._v[i], self._a[i] = [mass, ball_position, 0, 0]
+        self._s[i] = position
+        self._v[i] = 0
+        self._m[i] = mass
         self._compute_state[i] = True
 
     def remove_ball(self, select_position):
@@ -58,7 +58,63 @@ class MecanicsEngine:
     def clear(self):
         self._compute_state[:] = False
 
-    def update(
+    def update(self, dt, calculus_engine: CalculusEngine, z_correction=True):
+        if not self._compute_state.sum():
+            return
+
+        pos = self._s[self._compute_state]
+        vel = self._v[self._compute_state]
+
+        point_mesh = pos[:, :2]
+        normal = calculus_engine.build_normals(point_mesh)
+
+        Fg_net = self.get_gravity()
+        Z = normalize(normal)
+        Fg_z = vec_dot(Fg_net, Z)
+        Fg_x = Fg_net - Fg_z
+        X = normalize(Fg_x)
+        # Y = vec_cross(Z, X)
+
+        vel[np.isinf(vel)] = 0
+        vel_dir = normalize(vel)
+
+        grad_mask = magnitude(vel_dir) != 0
+        curvature = np.zeros(len(grad_mask))
+
+        if grad_mask.sum():
+            point_mesh_vel = vel_dir[grad_mask, :2]
+            grad_1 = calculus_engine.build_gradient_first(point_mesh_vel)
+            grad_2 = calculus_engine.build_gradient_second(point_mesh_vel)
+
+            slope_1 = np.vecdot(grad_1, point_mesh_vel)
+            slope_2 = np.vecdot(grad_2, point_mesh_vel)
+
+            curvature[grad_mask] = np.abs(slope_2) / (1 + slope_1**2) ** (3 / 2)
+
+        mass = self._m[self._compute_state]
+        Fnet_z = column_wise(curvature * (magnitude(vel) ** 2) * mass) * Z
+        N_z = Fnet_z - Fg_z
+        N = magnitude(N_z)
+        fk_xy = -vel_dir * column_wise(self.get_friction() * N)
+
+        Fnet_xy = Fg_x + fk_xy
+
+        # Fnet = Fnet_z + Fnet_xy
+        # a_net = Fnet / column_wise(mass)
+
+        a_z = Fnet_z / column_wise(mass)
+        a_xy = Fnet_xy / column_wise(mass)
+        a_net = a_z + a_xy
+
+        self._v[self._compute_state] = a_net * dt + vel
+        v_net = self._v[self._compute_state]
+        self._s[self._compute_state] = v_net * dt + pos
+
+        if z_correction:
+            z = calculus_engine.build_values(point_mesh)
+            self._s[self._compute_state, 2] = z
+
+    def _update(
         self,
         pos_3d,
         calculus_engine,
@@ -97,15 +153,15 @@ class MecanicsEngine:
 
         curvatures = []
         for i, n in enumerate(np.where(self._compute_state)[0]):
-            I, J, K = get_basis()
-            try:
-                T = np.linalg.solve([I, J, K], [X[i], Y[i], Z[i]])
-                J_inv = np.linalg.inv(T)
-            except np.linalg.LinAlgError:
-                curvatures.append(0)
-                continue
-                T = np.eye(3)
-                J_inv = np.eye(3)
+            # I, J, K = get_basis()
+            # try:
+            #     T = np.linalg.solve([I, J, K], [X[i], Y[i], Z[i]])
+            #     J_inv = np.linalg.inv(T)
+            # except np.linalg.LinAlgError:
+            #     curvatures.append(0)
+            #     continue
+            #     T = np.eye(3)
+            #     J_inv = np.eye(3)
 
             # u = np.array([1.0, 1.0, 1.0])
             u = self._v[n]

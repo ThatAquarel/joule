@@ -39,6 +39,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.imgui_impl = self.init_imgui(self.window)
 
         self.axes = Axes()
+        self.balls = Ball()
         self.calculus_engine = CalculusEngine()
         self.mecanics_engine = MecanicsEngine()
 
@@ -111,11 +112,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.camera_mouse_button_callback(window, button, action, mods)
 
         if button == glfw.MOUSE_BUTTON_LEFT and action == glfw.PRESS:
-            rh = self.get_right_handed()
-            pos_3d = self.get_click_point(window, rh)
-
-            f_xy = self.calculus_engine.get_f_xy()
-            self.mecanics_engine.add_ball(pos_3d, f_xy, 10)
+            self.on_add(window)
 
     def cursor_pos_callback(self, window, xpos, ypos):
         # Forward imgui mouse events
@@ -123,9 +120,6 @@ class App(CameraOrbitControls, ShaderRenderer):
             return
 
         self.camera_cursor_pos_callback(window, xpos, ypos)
-
-        rh = self.get_right_handed()
-        self.pos_3d = self.get_click_point(window, rh)
 
     def scroll_callback(self, window, xoffset, yoffset):
         # Forward imgui mouse events
@@ -156,29 +150,13 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         text = ""
 
-        ball = Ball()
-
         start = time.time()
         dt = 0
 
         while not self.window_should_close(window):
-            self.frame_setup()
+            self.mecanics_engine.update(dt, self.calculus_engine, z_correction=True)
 
-            self.set_matrix_uniforms(
-                self.get_camera_projection(),
-                self.get_camera_transform(),
-            )
-
-            self.set_lighting_uniforms(glm.vec3(1, 1, 1))
-            self.surface.draw()
-
-            self.set_lighting_uniforms(
-                glm.vec3(1, 1, 1),
-                diffuse_strength=0.6,
-                diffuse_base=0.5,
-                specular_strength=1.0,
-                specular_reflection=16,
-            )
+            self.on_frame(dt)
 
             # f_xy = self.calculus_engine.get_f_xy()
             # d_dx = self.calculus_engine.get_d_dx()
@@ -240,6 +218,37 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         self.terminate()
 
+    def on_frame(self, dt):
+        self.frame_setup()
+
+        self.set_matrix_uniforms(
+            self.get_camera_projection(),
+            self.get_camera_transform(),
+        )
+
+        self.set_lighting_uniforms(glm.vec3(1, 1, 1))
+        self.surface.draw()
+
+        self.set_lighting_uniforms(
+            glm.vec3(1, 1, 1),
+            diffuse_strength=0.6,
+            diffuse_base=0.5,
+            specular_strength=1.0,
+            specular_reflection=16,
+        )
+
+        positions = self.mecanics_engine.get_render_positions()
+        self.balls.draw(positions, self.calculus_engine)
+
+    def on_add(self, window):
+        rh = self.get_right_handed()
+        x, y, _ = self.get_click_point(window, rh)
+
+        point_mesh = np.array([[x, y]])
+        (z,) = self.calculus_engine.build_values(point_mesh)
+
+        self.mecanics_engine.add_ball((x, y, z), 10)
+
     def update_function(self, text, x_domain, y_domain):
         self.calculus_engine.update_function(text)
         self.mecanics_engine.clear()
@@ -254,4 +263,4 @@ class App(CameraOrbitControls, ShaderRenderer):
 
 # run the app
 def run():
-    App((1280, 720), "The Force Awakens")
+    App((1280, 720), "Joule")
