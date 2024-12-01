@@ -181,19 +181,19 @@ class MecanicsEngine:
 
         s = self._s[self._compute_state]
 
-        glBegin(GL_LINES)
-        for i, n in enumerate(np.where(self._compute_state)[0]):
-            glVertex3f(*s[i])
-            # glVertex3f(*s[i] + (Fnet_xy + Fnet_z)[i])
-            glVertex3f(*s[i] + N_z[i])
+        # glBegin(GL_LINES)
+        # for i, n in enumerate(np.where(self._compute_state)[0]):
+        #     glVertex3f(*s[i])
+        #     # glVertex3f(*s[i] + (Fnet_xy + Fnet_z)[i])
+        #     glVertex3f(*s[i] + N_z[i])
 
-            # glVertex3f(*s[i])
-            # glVertex3f(*s[i] + Y[i])
+        #     # glVertex3f(*s[i])
+        #     # glVertex3f(*s[i] + Y[i])
 
-            # glVertex3f(*s[i])
-            # glVertex3f(*s[i] + Z[i])
+        #     # glVertex3f(*s[i])
+        #     # glVertex3f(*s[i] + Z[i])
 
-        glEnd()
+        # glEnd()
 
         # glBegin(GL_LINES)
         # glVertex3f(*s[0])
