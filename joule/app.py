@@ -226,6 +226,9 @@ class App(CameraOrbitControls, ShaderRenderer):
             imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
         )
 
+        range_values = [10.0, 50.0, 10.0, 50.0]
+        changed, range_values = imgui.slider_float4("Range", *range_values, 0.0, 100.0)
+
         if imgui.button("Evaluate"):
             self.parser_label = self.update_function(
                 self.expression_textbox, [-np.pi, np.pi], [-np.pi, np.pi]
