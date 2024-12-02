@@ -44,15 +44,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.mecanics_engine = MecanicsEngine()
 
         self.surface = Surface(res=1024)
-        self.update_function(
-            "-sin(1/(sqrt(x**2 + y**2)))", [-np.pi, np.pi], [-np.pi, np.pi]
-        )
-        # self.graph_engine.update_function(
-        #     "-sin(1/(sqrt(x**2 + y**2)))", -np.pi, np.pi, -np.pi, np.pi
-        # )
-        # self.calculus_engine.update_function("-sin(1/(sqrt(x**2 + y**2)))")
-        # self.calculus_engine.update_function("cos(x*y)")
-        # self.calculus_engine.update_function("-sqrt(1-x*x -y*y)")
+        self.update_function("sin(x + y)", [-np.pi, np.pi], [-np.pi, np.pi])
 
         self.rendering_loop(self.window, self.imgui_impl)
 
@@ -141,6 +133,10 @@ class App(CameraOrbitControls, ShaderRenderer):
         # Terminates the window
         glfw.terminate()
 
+    def _ui_space(self):
+        for _ in range(5):
+            imgui.spacing()
+
     def rendering_loop(
         self,
         window,
@@ -149,6 +145,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.render_setup()
 
         text = ""
+        parser_message = ""
 
         start = time.time()
         dt = 0
@@ -158,50 +155,42 @@ class App(CameraOrbitControls, ShaderRenderer):
 
             self.on_frame(dt)
 
-            # f_xy = self.calculus_engine.get_f_xy()
-            # d_dx = self.calculus_engine.get_d_dx()
-            # d2_dx2 = self.calculus_engine.get_d2_dx2()
-            # d_dy = self.calculus_engine.get_d_dy()
-            # d2_dy2 = self.calculus_engine.get_d2_dy2()
-
-            # if hasattr(self, "pos_3d"):
-            #     self.mecanics_engine.update(
-            #         self.pos_3d,
-            #         self.calculus_engine,
-            #         dt,
-            #         f_xy,
-            #         d_dx,
-            #         d_dy,
-            #         d2_dx2,
-            #         d2_dy2,
-            #         self.calculus_engine.surface,
-            #     )
-            # else:
-            #     self.mecanics_engine.update(
-            #         [0, 0, 0],
-            #         self.calculus_engine,
-            #         dt,
-            #         f_xy,
-            #         d_dx,
-            #         d_dy,
-            #         d2_dx2,
-            #         d2_dy2,
-            #         self.calculus_engine.surface,
-            #     )
-
-            # ball.draw(self.mecanics_engine.get_render_positions(), self.calculus_engine)
-
             imgui.new_frame()
-            imgui.begin("Test")
+            imgui.begin("Joule")
 
+            imgui.text("Graphics")
+            imgui.separator()
             if dt:
                 imgui.text(f"{1/dt:.2f} fps")
 
-            changed, text = imgui.input_text("Expression", text, 256)
+            self._ui_space()
+            imgui.text("Expression")
+            imgui.separator()
 
-            if imgui.button("evaluate"):
-                self.update_function(text, [-np.pi, np.pi], [-np.pi, np.pi])
+            changed, text = imgui.input_text_multiline(
+                "",
+                text,
+                1024,
+                200,
+                100,
+                imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
+            )
+
+            if imgui.button("Evaluate"):
+                parser_message = self.update_function(
+                    text, [-np.pi, np.pi], [-np.pi, np.pi]
+                )
                 text = ""
+
+            imgui.text(parser_message)
+
+            self._ui_space()
+            imgui.separator()
+            imgui.text("Functions")
+
+            for name, expression in self.function_texts.items():
+                imgui.spacing()
+                imgui.text(f"{name}\n{expression}")
 
             imgui.end()
 
@@ -250,7 +239,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.mecanics_engine.add_ball((x, y, z), 10)
 
     def update_function(self, text, x_domain, y_domain):
-        self.calculus_engine.update_function(text)
+        parser_message = self.calculus_engine.update_function(text)
         self.mecanics_engine.clear()
 
         point_mesh = self.surface.get_point_mesh(x_domain, y_domain)
@@ -259,6 +248,27 @@ class App(CameraOrbitControls, ShaderRenderer):
             self.calculus_engine.build_values(point_mesh),
             self.calculus_engine.build_normals(point_mesh),
         )
+
+        f = self.calculus_engine.get_function(symbolic=True)
+        x, y = self.calculus_engine.x, self.calculus_engine.y
+        fx = self.calculus_engine.get_partial(x, 1, symbolic=True)
+        fxx = self.calculus_engine.get_partial(x, 2, symbolic=True)
+        fy = self.calculus_engine.get_partial(y, 1, symbolic=True)
+        fyy = self.calculus_engine.get_partial(y, 2, symbolic=True)
+        fxy = self.calculus_engine.get_mixed_partial(symbolic=True)
+
+        p = self.calculus_engine.pretty_print
+
+        self.function_texts = {
+            "f(x,y) =": p(f),
+            "df/dx =": p(fx),
+            "df/dy =": p(fy),
+            "d2f/dx2 =": p(fxx),
+            "d2f/dy2 =": p(fyy),
+            "d2f/dxdy =": p(fxy),
+        }
+
+        return parser_message
 
 
 # run the app

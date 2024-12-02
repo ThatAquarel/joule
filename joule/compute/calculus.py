@@ -137,7 +137,11 @@ class CalculusEngine:
     def update_function(self, equation):
         symbols = self.x, self.y
 
-        self._f = self._parse_function(equation)
+        try:
+            self._f = self._parse_function(equation)
+        except Exception as e:
+            return str(e)
+
         self._f_l = self._function_lambda(symbols, self._f)
 
         self._fx_l, self._fx = self._partial_derivative_lambda(
@@ -165,3 +169,8 @@ class CalculusEngine:
         self._fxy_l, self._fxy = self._partial_derivative_lambda(
             symbols, self._fy, [self.x, self.y]
         )
+
+        return ""
+
+    def pretty_print(self, function):
+        return sp.pretty(function, use_unicode=False)
