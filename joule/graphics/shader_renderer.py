@@ -30,7 +30,7 @@ class ShaderRenderer:
             0.0,
             1.0,
         )
-        self._view_vec = glm.vec4(0, 0, 10, 1)
+        self._view_vec = glm.vec4(0, 0, 32, 1)
 
     def get_right_handed(self):
         return self._transform
