@@ -162,6 +162,9 @@ class App(CameraOrbitControls, ShaderRenderer):
             imgui.separator()
             if dt:
                 imgui.text(f"{1/dt:.2f} fps")
+            n_bodies = self.mecanics_engine.get_render_n()
+            max_bodies = self.mecanics_engine.get_render_max()
+            imgui.text(f"{n_bodies}/{max_bodies} bodies")
 
             self._ui_space()
             imgui.text("Expression")
