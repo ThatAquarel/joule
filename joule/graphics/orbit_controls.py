@@ -3,7 +3,7 @@ import glfw
 import numpy as np
 
 
-from OpenGL.GL import glReadPixels, GL_DEPTH_COMPONENT, GL_FLOAT
+from OpenGL.GL import glViewport, glReadPixels, GL_DEPTH_COMPONENT, GL_FLOAT
 
 
 class CameraOrbitControls:
@@ -60,6 +60,8 @@ class CameraOrbitControls:
             self._zoom_level *= 1 + self._zoom_sensitivity
 
     def camera_resize_callback(self, window, width, height):
+        glViewport(0, 0, width, height)
+
         aspect_ratio = width / height if height > 0 else 1.0
         self._view_box[:] = [-aspect_ratio, aspect_ratio]
 

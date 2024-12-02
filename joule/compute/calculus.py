@@ -2,7 +2,6 @@ import numpy as np
 import sympy as sp
 
 from joule.compute.linalg import normalize
-from joule.graphics.elements.surface import Surface
 
 
 class CalculusEngine:

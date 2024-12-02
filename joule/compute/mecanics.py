@@ -1,33 +1,28 @@
-import sympy as sp
 import numpy as np
-
-from OpenGL.GL import *
 
 from joule.compute.calculus import CalculusEngine
 from joule.compute.linalg import (
     column_wise,
     magnitude,
     normalize,
-    vec_cross,
     vec_dot,
 )
 
 
 class MecanicsEngine:
-    def __init__(self, buffer_size=32):
+    def __init__(self, inital_gravity, initial_friction, buffer_size=32):
         self._compute_state = np.zeros(buffer_size, dtype=bool)
         self._s, self._v = np.zeros((2, buffer_size, 3))
         self._m = np.zeros(buffer_size)
 
-        # self._gravity = np.array([0, 0, -9.81])
-        self._gravity = np.array([0, 0, -25])
-        self._friction = 0.2
+        self.set_gravity(inital_gravity)
+        self.set_friction(initial_friction)
 
     def get_gravity(self):
         return self._gravity
 
     def set_gravity(self, gravity):
-        self._gravity[:] = gravity
+        self._gravity = np.array([0, 0, -gravity])
 
     def get_friction(self):
         return self._friction
@@ -99,9 +94,6 @@ class MecanicsEngine:
 
         Fnet_xy = Fg_x + fk_xy
 
-        # Fnet = Fnet_z + Fnet_xy
-        # a_net = Fnet / column_wise(mass)
-
         a_z = Fnet_z / column_wise(mass)
         a_xy = Fnet_xy / column_wise(mass)
         a_net = a_z + a_xy
@@ -116,6 +108,9 @@ class MecanicsEngine:
 
     def get_render_positions(self):
         return self._s[self._compute_state]
+
+    def get_render_masses(self):
+        return self._m[self._compute_state]
 
     def get_render_n(self):
         return self._compute_state.sum()
