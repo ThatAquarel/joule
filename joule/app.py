@@ -47,7 +47,11 @@ class App(CameraOrbitControls, ShaderRenderer):
             initial_friction=self.friction_slider,
         )
 
-        self.update_function("sin(x + y)", [-np.pi, np.pi], [-np.pi, np.pi])
+        self.update_function(
+            "sin(x + y)",
+            self.x_domain_slider,
+            self.y_domain_slider,
+        )
 
         self.rendering_loop(self.window, self.imgui_impl)
 
@@ -84,6 +88,9 @@ class App(CameraOrbitControls, ShaderRenderer):
         self.mass_slider = 10.0
         self.gravity_slider = 25.0
         self.friction_slider = 0.2
+
+        self.x_domain_slider = [-np.pi, np.pi]
+        self.y_domain_slider = [-np.pi, np.pi]
 
         self.ball_color = [0.25, 0.25, 0.25]
         self.surface_color = [1.0, 1.0, 1.0]
@@ -226,12 +233,38 @@ class App(CameraOrbitControls, ShaderRenderer):
             imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
         )
 
-        range_values = [10.0, 50.0, 10.0, 50.0]
-        changed, range_values = imgui.slider_float4("Range", *range_values, 0.0, 100.0)
+        # range_values = [10.0, 50.0, 10.0, 50.0]
+        changed, self.x_domain_slider = imgui.slider_float2(
+            "x domain",
+            *self.x_domain_slider,
+            -4 * np.pi,
+            4 * np.pi,
+        )
+
+        self.x_domain_slider = list(self.x_domain_slider)
+        x_min = np.min(self.x_domain_slider)
+        x_max = np.max(self.x_domain_slider)
+        self.x_domain_slider[0] = x_min
+        self.x_domain_slider[1] = x_max
+
+        changed, self.y_domain_slider = imgui.slider_float2(
+            "y domain",
+            *self.y_domain_slider,
+            -4 * np.pi,
+            4 * np.pi,
+        )
+
+        self.y_domain_slider = list(self.y_domain_slider)
+        y_min = np.min(self.y_domain_slider)
+        y_max = np.max(self.y_domain_slider)
+        self.y_domain_slider[0] = y_min
+        self.y_domain_slider[1] = y_max
 
         if imgui.button("Evaluate"):
             self.parser_label = self.update_function(
-                self.expression_textbox, [-np.pi, np.pi], [-np.pi, np.pi]
+                self.expression_textbox,
+                self.x_domain_slider,
+                self.y_domain_slider,
             )
             self.expression_textbox = ""
 
