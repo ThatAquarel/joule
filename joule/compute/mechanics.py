@@ -9,14 +9,14 @@ from joule.compute.linalg import (
 )
 
 
-class MecanicsEngine:
+class MechanicsEngine:
     def __init__(self, initial_gravity, initial_friction, buffer_size=32):
         self._compute_state = np.zeros(buffer_size, dtype=bool)
         self._s, self._v = np.zeros((2, buffer_size, 3))
         self._m = np.zeros(buffer_size)
 
-        self.set_gravity(initial_gravity)
-        self.set_friction(initial_friction)
+        self._gravity = initial_gravity
+        self._friction = initial_friction
 
     def get_gravity(self):
         return self._gravity
@@ -35,7 +35,7 @@ class MecanicsEngine:
         if self._compute_state[i]:
             distances_to_origin = np.linalg.norm(self._s, axis=1)
             i = np.argmax(distances_to_origin)
-            print(f"mecanics buffer full: overwrite {i} (furthest)")
+            print(f"mechanics buffer full: overwrite {i} (furthest)")
         return i
 
     def add_ball(self, position, mass):

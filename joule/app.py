@@ -14,7 +14,7 @@ from joule.graphics.elements.axes import Axes
 from joule.graphics.elements.ball import Ball
 from joule.graphics.elements.surface import Surface
 
-from joule.compute.mecanics import MecanicsEngine
+from joule.compute.mechanics import MechanicsEngine
 from joule.compute.calculus import CalculusEngine
 
 
@@ -47,7 +47,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         )
 
         self.calculus_engine = CalculusEngine()
-        self.mechanics_engine = MecanicsEngine(
+        self.mechanics_engine = MechanicsEngine(
             initial_gravity=self.ui.gravity_slider,
             initial_friction=self.ui.friction_slider,
         )
