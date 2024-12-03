@@ -123,8 +123,6 @@ class CalculusEngine:
             "exp": sp.exp,
             "ln": sp.ln,
             "log": sp.log,
-            "ceil": sp.ceiling,
-            "floor": sp.floor,
         }
 
         return sp.sympify(
