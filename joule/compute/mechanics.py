@@ -11,6 +11,7 @@ from joule.compute.linalg import (
 
 class MechanicsEngine:
     def __init__(self, initial_gravity, initial_friction, buffer_size=32):
+        self._buffer_increment = buffer_size
         self._compute_state = np.zeros(buffer_size, dtype=bool)
         self._s, self._v = np.zeros((2, buffer_size, 3))
         self._m = np.zeros(buffer_size)
@@ -33,9 +34,21 @@ class MechanicsEngine:
     def _get_available_compute_spot(self):
         i = np.argmin(self._compute_state)
         if self._compute_state[i]:
-            distances_to_origin = np.linalg.norm(self._s, axis=1)
-            i = np.argmax(distances_to_origin)
-            print(f"mechanics buffer full: overwrite {i} (furthest)")
+            old_size = len(self._compute_state)
+            new_size = old_size + self._buffer_increment
+
+            print(f"mechanics: reallocate, from {old_size} to {new_size}")
+
+            compute_state = np.zeros(new_size, dtype=bool)
+            compute_state[:old_size] = self._compute_state
+            self._compute_state = compute_state
+
+            (s, v), m = np.zeros((2, new_size, 3)), np.zeros(new_size)
+            s[:old_size], v[:old_size], m[:old_size] = self._s, self._v, self._m
+            self._s, self._v, self._m = s, v, m
+
+            i = old_size
+
         return i
 
     def add_ball(self, position, mass):
