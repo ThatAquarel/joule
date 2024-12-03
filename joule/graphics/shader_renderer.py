@@ -8,10 +8,9 @@ import joule.graphics.shaders
 
 
 class ShaderRenderer:
-    def __init__(self, background_color=(0.86, 0.87, 0.87), **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self._background_color = background_color
         self._transform = glm.mat4x4(
             1.0,
             0.0,
@@ -70,9 +69,9 @@ class ShaderRenderer:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
 
-    def frame_setup(self):
+    def frame_setup(self, background_color):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glClearColor(*self._background_color, 1.0)
+        glClearColor(*background_color, 1.0)
         glUseProgram(self._shader)
 
     def set_matrix_uniforms(

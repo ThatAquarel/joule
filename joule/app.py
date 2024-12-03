@@ -5,9 +5,9 @@ import numpy as np
 
 import glm
 import imgui
-from imgui.integrations.glfw import GlfwRenderer
 
 from joule.graphics.orbit_controls import CameraOrbitControls
+from joule.graphics.parameter_interface import ParameterInterface
 from joule.graphics.shader_renderer import ShaderRenderer
 
 from joule.graphics.elements.axes import Axes
@@ -20,40 +20,45 @@ from joule.compute.calculus import CalculusEngine
 
 class App(CameraOrbitControls, ShaderRenderer):
     def __init__(
-        self,
-        window_size,
-        name,
-        *orbit_control_args,
+            self,
+            window_size,
+            name,
+            *orbit_control_args,
     ):
         super().__init__(*orbit_control_args)
 
-        # Creates window and buttons
         self.window = self.window_init(window_size, name)
-        self.imgui_impl = self.init_ui(self.window)
+        self.ui = ParameterInterface(
+            self.window,
+            self.on_evaluate,
+            self.on_change_ball_color,
+            self.on_change_surface_color,
+        )
 
         self.axes = Axes()
         self.balls = Ball(
-            initial_color=self.ball_color,
+            initial_color=self.ui.ball_color,
             res=25,
         )
+
         self.surface = Surface(
-            initial_color=self.surface_color,
+            initial_color=self.ui.surface_color,
             res=1024,
         )
 
         self.calculus_engine = CalculusEngine()
-        self.mecanics_engine = MecanicsEngine(
-            inital_gravity=self.gravity_slider,
-            initial_friction=self.friction_slider,
+        self.mechanics_engine = MecanicsEngine(
+            initial_gravity=self.ui.gravity_slider,
+            initial_friction=self.ui.friction_slider,
         )
 
-        self.update_function(
-            "sin(x + y)",
-            self.x_domain_slider,
-            self.y_domain_slider,
+        self.on_evaluate(
+            self.ui.expression_textbox,
+            self.ui.x_domain_slider,
+            self.ui.y_domain_slider
         )
 
-        self.rendering_loop(self.window, self.imgui_impl)
+        self.rendering_loop()
 
     def window_init(self, window_size, name):
         # Raises an exception if GLFW couldn't be initiated
@@ -84,41 +89,17 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         return window
 
-    def init_ui(self, window):
-        self.mass_slider = 10.0
-        self.gravity_slider = 25.0
-        self.friction_slider = 0.2
-
-        self.x_domain_slider = [-np.pi, np.pi]
-        self.y_domain_slider = [-np.pi, np.pi]
-
-        self.ball_color = [0.25, 0.25, 0.25]
-        self.surface_color = [1.0, 1.0, 1.0]
-
-        self.expression_textbox = ""
-        self.parser_label = ""
-
-        # Creates imgui context and renderer
-        imgui.create_context()
-        return GlfwRenderer(window, attach_callbacks=False)
-
-    def imgui_want_mouse(self):
-        return imgui.get_io().want_capture_mouse
-
-    def imgui_want_keyboard(self):
-        return imgui.get_io().want_capture_keyboard
-
     def key_callback(self, *args):
-        if self.imgui_want_keyboard():
-            self.imgui_impl.keyboard_callback(*args)
+        if self.ui.want_mouse:
+            self.ui.impl.keyboard_callback(*args)
 
     def char_callback(self, *args):
-        if self.imgui_want_keyboard():
-            self.imgui_impl.char_callback(*args)
+        if self.ui.want_keyboard:
+            self.ui.impl.char_callback(*args)
 
     def mouse_button_callback(self, window, button, action, mods):
         # Forward imgui mouse events
-        if self.imgui_want_mouse():
+        if self.ui.want_mouse:
             return
 
         self.camera_mouse_button_callback(window, button, action, mods)
@@ -128,14 +109,14 @@ class App(CameraOrbitControls, ShaderRenderer):
 
     def cursor_pos_callback(self, window, xpos, ypos):
         # Forward imgui mouse events
-        if self.imgui_want_mouse():
+        if self.ui.want_mouse:
             return
 
         self.camera_cursor_pos_callback(window, xpos, ypos)
 
     def scroll_callback(self, window, xoffset, yoffset):
         # Forward imgui mouse events
-        if self.imgui_want_mouse():
+        if self.ui.want_mouse:
             return
 
         self.camera_scroll_callback(window, xoffset, yoffset)
@@ -144,187 +125,63 @@ class App(CameraOrbitControls, ShaderRenderer):
         # Properly sizes the viewport window to the correct ratio
         self.camera_resize_callback(window, width, height)
 
-    def window_should_close(self, window):
+    def window_should_close(self):
         # Returns if the window should close
-        return glfw.window_should_close(window)
+        return glfw.window_should_close(self.window)
 
-    def terminate(self):
-        # Terminates the window
-        glfw.terminate()
-
-    def _ui_space(self):
-        for _ in range(5):
-            imgui.spacing()
-
-    def rendering_loop(
-        self,
-        window,
-        imgui_impl,
-    ):
+    def rendering_loop(self):
         self.render_setup()
 
         start = time.time()
         dt = 0
 
-        while not self.window_should_close(window):
-            self.mecanics_engine.update(dt, self.calculus_engine, z_correction=True)
+        while not self.window_should_close():
+            n_bodies = self.mechanics_engine.get_render_n()
+            buffer_size = self.mechanics_engine.get_render_max()
+
+            self.ui.update_status(dt, n_bodies, buffer_size)
+            self.mechanics_engine.set_gravity(self.ui.gravity_slider)
+            self.mechanics_engine.set_friction(self.ui.friction_slider)
+
+            self.mechanics_engine.update(dt, self.calculus_engine, z_correction=self.ui.z_correction)
 
             self.on_render_frame()
-            self.on_render_ui(dt)
+            self.ui.on_render_ui()
 
-            imgui_impl.process_inputs()
-            imgui_impl.render(imgui.get_draw_data())
+            self.ui.impl.process_inputs()
+            self.ui.impl.render(imgui.get_draw_data())
 
-            glfw.swap_buffers(window)
+            glfw.swap_buffers(self.window)
             glfw.poll_events()
 
             current = time.time()
             dt = current - start
             start = current
 
-        self.terminate()
+        glfw.terminate()
 
     def on_render_frame(self):
-        self.frame_setup()
+        self.frame_setup(self.ui.background_color)
 
         self.set_matrix_uniforms(
             self.get_camera_projection(),
             self.get_camera_transform(),
         )
 
-        self.set_lighting_uniforms(glm.vec3(1, 1, 1))
         self.surface.draw()
 
         self.set_lighting_uniforms(
-            glm.vec3(1, 1, 1),
-            diffuse_strength=0.6,
-            diffuse_base=0.5,
-            specular_strength=1.0,
-            specular_reflection=16,
+            glm.vec3(*self.ui.light_color),
+            ambient_strength=self.ui.ambient_strength,
+            diffuse_strength=self.ui.diffuse_strength,
+            diffuse_base=self.ui.diffuse_base,
+            specular_strength=self.ui.specular_strength,
+            specular_reflection=self.ui.specular_reflection,
         )
 
-        positions = self.mecanics_engine.get_render_positions()
-        masses = self.mecanics_engine.get_render_masses()
+        positions = self.mechanics_engine.get_render_positions()
+        masses = self.mechanics_engine.get_render_masses()
         self.balls.draw(positions, masses, self.calculus_engine)
-
-    def on_render_ui(self, dt):
-        imgui.new_frame()
-        imgui.begin("Joule")
-
-        imgui.text("Render")
-        imgui.separator()
-        if dt:
-            imgui.text(f"{1/dt:.2f} fps")
-        n_bodies = self.mecanics_engine.get_render_n()
-        max_bodies = self.mecanics_engine.get_render_max()
-        imgui.text(f"{n_bodies}/{max_bodies} bodies")
-
-        self._ui_space()
-        imgui.text("Expression")
-        imgui.separator()
-
-        window_width = imgui.get_window_width()
-        _, self.expression_textbox = imgui.input_text_multiline(
-            "",
-            self.expression_textbox,
-            1024,
-            window_width - 16,
-            100,
-            imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
-        )
-
-        # range_values = [10.0, 50.0, 10.0, 50.0]
-        changed, self.x_domain_slider = imgui.slider_float2(
-            "x domain",
-            *self.x_domain_slider,
-            -4 * np.pi,
-            4 * np.pi,
-        )
-
-        self.x_domain_slider = list(self.x_domain_slider)
-        x_min = np.min(self.x_domain_slider)
-        x_max = np.max(self.x_domain_slider)
-        self.x_domain_slider[0] = x_min
-        self.x_domain_slider[1] = x_max
-
-        changed, self.y_domain_slider = imgui.slider_float2(
-            "y domain",
-            *self.y_domain_slider,
-            -4 * np.pi,
-            4 * np.pi,
-        )
-
-        self.y_domain_slider = list(self.y_domain_slider)
-        y_min = np.min(self.y_domain_slider)
-        y_max = np.max(self.y_domain_slider)
-        self.y_domain_slider[0] = y_min
-        self.y_domain_slider[1] = y_max
-
-        if imgui.button("Evaluate"):
-            self.parser_label = self.update_function(
-                self.expression_textbox,
-                self.x_domain_slider,
-                self.y_domain_slider,
-            )
-            self.expression_textbox = ""
-
-        imgui.text(self.parser_label)
-
-        self._ui_space()
-        imgui.text("Parameters")
-        imgui.separator()
-        _, self.mass_slider = imgui.slider_float(
-            "mass (kg)",
-            self.mass_slider,
-            0.0,
-            100.0,
-        )
-
-        changed, self.gravity_slider = imgui.slider_float(
-            "gravity (m/s^2)",
-            self.gravity_slider,
-            0.0,
-            100.0,
-        )
-        if changed:
-            self.mecanics_engine.set_gravity(self.gravity_slider)
-
-        changed, self.friction_slider = imgui.slider_float(
-            "fiction (k)",
-            self.friction_slider,
-            0.0,
-            1.0,
-        )
-        if changed:
-            self.mecanics_engine.set_friction(self.friction_slider)
-
-        imgui.spacing()
-
-        changed, self.ball_color[:] = imgui.color_edit3(
-            "ball color",
-            *self.ball_color,
-        )
-        if changed:
-            self.balls.set_color(self.ball_color)
-
-        changed, self.surface_color[:] = imgui.color_edit3(
-            "surface color",
-            *self.surface_color,
-        )
-        if changed:
-            self.surface.set_color(self.surface_color)
-
-        self._ui_space()
-        imgui.text("Function")
-        imgui.separator()
-
-        for name, expression in self.function_texts.items():
-            imgui.spacing()
-            imgui.text(f"{name}\n{expression}")
-
-        imgui.end()
-
-        imgui.render()
 
     def on_add(self, window):
         rh = self.get_right_handed()
@@ -333,11 +190,11 @@ class App(CameraOrbitControls, ShaderRenderer):
         point_mesh = np.array([[x, y]])
         (z,) = self.calculus_engine.build_values(point_mesh)
 
-        self.mecanics_engine.add_ball((x, y, z), self.mass_slider)
+        self.mechanics_engine.add_ball((x, y, z), self.ui.mass_slider)
 
-    def update_function(self, text, x_domain, y_domain):
-        parser_message = self.calculus_engine.update_function(text)
-        self.mecanics_engine.clear()
+    def on_evaluate(self, expression, x_domain, y_domain):
+        parser_message = self.calculus_engine.update_function(expression)
+        self.mechanics_engine.clear()
 
         point_mesh = self.surface.get_point_mesh(x_domain, y_domain)
         self.surface.update_function(
@@ -356,16 +213,25 @@ class App(CameraOrbitControls, ShaderRenderer):
 
         p = self.calculus_engine.pretty_print
 
-        self.function_texts = {
-            "f(x,y) =": p(f),
-            "df/dx =": p(fx),
-            "df/dy =": p(fy),
-            "d2f/dx2 =": p(fxx),
-            "d2f/dy2 =": p(fyy),
-            "d2f/dxdy =": p(fxy),
-        }
+        self.ui.update_differentiation(
+            parser_message,
+            {
+                "f(x,y) =": p(f),
+                "df/dx =": p(fx),
+                "df/dy =": p(fy),
+                "d2f/dx2 =": p(fxx),
+                "d2f/dy2 =": p(fyy),
+                "d2f/dxdy =": p(fxy),
+            }
+        )
 
         return parser_message
+
+    def on_change_ball_color(self, color):
+        self.balls.set_color(color)
+
+    def on_change_surface_color(self, color):
+        self.surface.set_color(color)
 
 
 # run the app

@@ -10,12 +10,12 @@ from joule.compute.linalg import (
 
 
 class MecanicsEngine:
-    def __init__(self, inital_gravity, initial_friction, buffer_size=32):
+    def __init__(self, initial_gravity, initial_friction, buffer_size=32):
         self._compute_state = np.zeros(buffer_size, dtype=bool)
         self._s, self._v = np.zeros((2, buffer_size, 3))
         self._m = np.zeros(buffer_size)
 
-        self.set_gravity(inital_gravity)
+        self.set_gravity(initial_gravity)
         self.set_friction(initial_friction)
 
     def get_gravity(self):
