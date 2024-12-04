@@ -63,7 +63,7 @@ class MechanicsEngine:
         Returns kinetic friction
 
         :return: friction
-        """(0,0 -g)
+        """
 
         return self._friction
 
@@ -234,6 +234,11 @@ class MechanicsEngine:
             # is aligned to velocity
             slope_1 = np.vecdot(grad_1, point_mesh_vel)
             slope_2 = np.vecdot(grad_2, point_mesh_vel)
+
+            # formulas from
+            # https://en.wikipedia.org/wiki/Radius_of_curvature
+            # with 
+            # https://en.wikipedia.org/wiki/Directional_derivative
 
             # calculate curvature according to directional
             # derivatives
