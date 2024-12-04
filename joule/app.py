@@ -25,6 +25,7 @@ class App(CameraOrbitControls, ShaderRenderer):
             name,
             *orbit_control_args,
     ):
+        # 
         super().__init__(*orbit_control_args)
 
         self.window = self.window_init(window_size, name)
