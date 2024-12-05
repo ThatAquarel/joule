@@ -23,7 +23,11 @@ void main() {
     gl_Position = vec4(position, 1.0) * t * cam_projection;
 
     // pass these parameters down to the fragment shader
+    // the color of each point
     vertex_color = color;
+    
+    // transform the normal and position with respect to the
+    // rendering coordinate system
     vertex_normal = vec3(vec4(normal, 1.0) * world_transform);
     vertex_frag_pos = vec3(vec4(position, 1.0) * world_transform);
 }
