@@ -8,25 +8,31 @@ from OpenGL.GL import *
 class Axes:
     def __init__(
         self,
-        x_div=10,
-        x_min=-0.5,
-        x_max=0.5,
-        y_div=10,
-        y_min=-0.5,
-        y_max=0.5,
-        z_min=-0.5,
-        z_max=0.5,
+        initial_x_domain,
+        initial_y_domain,
     ):
-        offset = [x_min, y_min, 0]
+        ranges = self.compute_ranges(initial_x_domain, initial_y_domain)
+        self.update_domain(*ranges)
+
+    def compute_ranges(self, function_x_domain, function_y_domain):
+        rounded = np.round(np.abs([function_x_domain, function_y_domain]))
+
+        range_max = np.max(rounded)
+        domain = (-range_max, range_max)
+        divs = (2 * range_max, 2 * range_max)
+        return domain, domain, domain, divs
+
+    def update_domain(self, x_range, y_range, z_range, divs):
+        x_div, y_div = divs
+
+        offset = [np.min(x_range), np.min(y_range), 0]
         self.x_vbo, self.x_n = self._build_gridline_vbo(
-            [1, 0, 2], offset, x_div, x_min, x_max
+            [1, 0, 2], offset, x_div, *x_range
         )
         self.y_vbo, self.y_n = self._build_gridline_vbo(
-            [0, 1, 2], offset, y_div, y_min, y_max
+            [0, 1, 2], offset, y_div, *y_range
         )
-        self.axes_vbo, self.axes_n = self._build_axes_vbo(
-            x_min, x_max, y_min, y_max, z_min, z_max
-        )
+        self.axes_vbo, self.axes_n = self._build_axes_vbo(*x_range, *y_range, *z_range)
 
     def _build_axes_vbo(self, x_min, x_max, y_min, y_max, z_min, z_max):
         data = np.array(
@@ -58,7 +64,7 @@ class Axes:
         vertices = lines.reshape((-1, 3))
         return vertices * (s_max - s_min)
 
-    def _build_gridline_color(self, vertices, color=[1, 1, 1]):
+    def _build_gridline_color(self, vertices, color=[0.6, 0.6, 0.6]):
         colors = np.ones(vertices.shape, dtype=np.float32) * color
         return np.hstack((vertices, colors)).astype(np.float32)
 
@@ -70,8 +76,9 @@ class Axes:
         return create_vbo(vbo_data), len(axes_s)
 
     def draw(self):
-        glLineWidth(1.0)
+        glLineWidth(0.25)
         draw_vbo(self.x_vbo, GL_LINES, self.x_n)
         draw_vbo(self.y_vbo, GL_LINES, self.y_n)
 
+        glLineWidth(2.0)
         draw_vbo(self.axes_vbo, GL_LINES, self.axes_n)

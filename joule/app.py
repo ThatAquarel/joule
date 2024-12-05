@@ -20,12 +20,11 @@ from joule.compute.calculus import CalculusEngine
 
 class App(CameraOrbitControls, ShaderRenderer):
     def __init__(
-            self,
-            window_size,
-            name,
-            *orbit_control_args,
+        self,
+        window_size,
+        name,
+        *orbit_control_args,
     ):
-        # 
         super().__init__(*orbit_control_args)
 
         self.window = self.window_init(window_size, name)
@@ -36,12 +35,14 @@ class App(CameraOrbitControls, ShaderRenderer):
             self.on_change_surface_color,
         )
 
-        self.axes = Axes()
+        self.axes = Axes(
+            self.ui.x_domain_slider,
+            self.ui.y_domain_slider,
+        )
         self.balls = Ball(
             initial_color=self.ui.ball_color,
             res=25,
         )
-
         self.surface = Surface(
             initial_color=self.ui.surface_color,
             res=1024,
@@ -54,9 +55,7 @@ class App(CameraOrbitControls, ShaderRenderer):
         )
 
         self.on_evaluate(
-            self.ui.expression_textbox,
-            self.ui.x_domain_slider,
-            self.ui.y_domain_slider
+            self.ui.expression_textbox, self.ui.x_domain_slider, self.ui.y_domain_slider
         )
 
         self.rendering_loop()
@@ -144,7 +143,9 @@ class App(CameraOrbitControls, ShaderRenderer):
             self.mechanics_engine.set_gravity(self.ui.gravity_slider)
             self.mechanics_engine.set_friction(self.ui.friction_slider)
 
-            self.mechanics_engine.update(dt, self.calculus_engine, z_correction=self.ui.z_correction)
+            self.mechanics_engine.update(
+                dt, self.calculus_engine, z_correction=self.ui.z_correction
+            )
 
             self.on_render_frame()
             self.ui.on_render_ui()
@@ -184,6 +185,9 @@ class App(CameraOrbitControls, ShaderRenderer):
         masses = self.mechanics_engine.get_render_masses()
         self.balls.draw(positions, masses, self.calculus_engine)
 
+        if self.ui.show_axes:
+            self.axes.draw()
+
     def on_add(self, window):
         rh = self.get_right_handed()
         x, y, _ = self.get_click_point(window, rh)
@@ -196,6 +200,9 @@ class App(CameraOrbitControls, ShaderRenderer):
     def on_evaluate(self, expression, x_domain, y_domain):
         parser_message = self.calculus_engine.update_function(expression)
         self.mechanics_engine.clear()
+
+        ranges = self.axes.compute_ranges(x_domain, y_domain)
+        self.axes.update_domain(*ranges)
 
         point_mesh = self.surface.get_point_mesh(x_domain, y_domain)
         self.surface.update_function(
@@ -223,10 +230,8 @@ class App(CameraOrbitControls, ShaderRenderer):
                 "d2f/dx2 =": p(fxx),
                 "d2f/dy2 =": p(fyy),
                 "d2f/dxdy =": p(fxy),
-            }
+            },
         )
-
-        return parser_message
 
     def on_change_ball_color(self, color):
         self.balls.set_color(color)

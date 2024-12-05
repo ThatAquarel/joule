@@ -12,7 +12,8 @@ class CameraOrbitControls:
         zoom_sensitivity=0.1,
         pan_sensitvity=0.001,
         orbit_sensitivity=0.0025,
-        initial_zoom=1,
+        initial_zoom=5,
+        initial_view_angle=(np.pi / 6, np.pi / 4),
         clipping=[-32, 32],
         **kwargs,
     ):
@@ -25,7 +26,7 @@ class CameraOrbitControls:
         self._zoom_level = initial_zoom
         self._clipping = clipping
 
-        self._view_angle = np.array([np.pi / 4, np.pi / 4])
+        self._view_angle = np.array(initial_view_angle)
         self._view_pan = np.zeros(2)
         self._view_box = np.zeros(2)
         self._prev_mouse_pos = np.zeros(2)

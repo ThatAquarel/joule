@@ -25,6 +25,7 @@ def ui_section(section_name, top_margin=True):
             func(*args, **kwargs)
 
         return wrapper
+
     return decorator
 
 
@@ -47,6 +48,7 @@ class ParameterInterface:
         self.dt = 0.0
         self.n_bodies = 0
         self.buffer_size = 0
+        self.show_axes = True
 
         # ui state variables of section: Expression
         self.expression_textbox = "sin(x + y)"
@@ -107,6 +109,8 @@ class ParameterInterface:
             imgui.text(f"{1 / self.dt:.2f} fps")
         imgui.text(f"{self.n_bodies}/{self.buffer_size} bodies")
 
+        _, self.show_axes = imgui.checkbox("show xyz axes", self.show_axes)
+
     @ui_section("Expression")
     def _expression(self):
         window_width = imgui.get_window_width()
@@ -166,8 +170,7 @@ class ParameterInterface:
             1.0,
         )
         z_correction_changed, self.z_correction = imgui.checkbox(
-            "z integration correction",
-            self.z_correction
+            "z integration correction", self.z_correction
         )
 
         imgui.spacing()
@@ -205,39 +208,21 @@ class ParameterInterface:
             0.0,
             1.0,
         )
-        diffuse_changed, (self.diffuse_strength, self.diffuse_base) = imgui.slider_float2(
-            "diffuse: strength, base",
-            self.diffuse_strength,
-            self.diffuse_base,
-            0.0,
-            1.0
+        diffuse_changed, (self.diffuse_strength, self.diffuse_base) = (
+            imgui.slider_float2(
+                "diffuse: strength, base",
+                self.diffuse_strength,
+                self.diffuse_base,
+                0.0,
+                1.0,
+            )
         )
         specular_strength_changed, self.specular_strength = imgui.slider_float(
-            "specular: strength",
-            self.specular_strength,
-            0.0,
-            1.0
+            "specular: strength", self.specular_strength, 0.0, 1.0
         )
         specular_power_changed, self.specular_reflection = imgui.slider_float(
-            "specular: reflection",
-            self.specular_reflection,
-            0.0,
-            32.0
+            "specular: reflection", self.specular_reflection, 0.0, 32.0
         )
-
-        # if light_color_changed or background_color_changed:
-        #     self._on_change_shader_color(
-        #         self.light_color,
-        #         self.background_color
-        #     )
-        # if ambient_changed or diffuse_changed or specular_changed:
-        #     self._on_change_shader_parameters(
-        #         self.ambient_strength,
-        #         self.diffuse_strength,
-        #         self.diffuse_base,
-        #         self.specular_strength,
-        #         self.specular_reflection
-        #     )
 
     @ui_section("Differentiation Results")
     def _functions(self):
