@@ -190,7 +190,7 @@ class CalculusEngine:
         normals = np.cross(fx_vec, fy_vec)
 
         # normalized unitary normals
-        return normalize(normals)
+        return normalize(normals, copy=False)
 
     def build_values(self, point_mesh):
         """

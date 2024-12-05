@@ -1,15 +1,17 @@
 import numpy as np
 
 
-def normalize(vectors):
+def normalize(vectors, copy=True):
     """
     Normalizes magnitude of array of vectors to one
 
     :param vectors: Vectors of shape (n, k)
-    :return: Normalized vectors of shape (n, k) 
+    :param copy: Create new instance of array in memory
+    :return: Normalized vectors of shape (n, k)
     """
 
-    vectors = np.copy(vectors)
+    if copy:
+        vectors = np.copy(vectors)
 
     # array of magnitudes
     norms = np.linalg.norm(vectors, axis=1)
@@ -72,10 +74,9 @@ def vec_dot(a, b):
     :param b: Array of vecotrs b of shape (n, k)
     :return: Array of vectors a projected onto b (n, k)
     """
-    
+
     # scalar dot product over array
     dot = np.vecdot(a, b)[:, np.newaxis]
 
     # projection of scalar over b
     return dot * b
-
