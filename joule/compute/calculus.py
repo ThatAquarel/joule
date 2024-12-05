@@ -24,6 +24,7 @@ class CalculusEngine:
 
         :param variables: Symbols implicated in function
         :param function: Sympy symbolic function
+        :return: Lambda representation of function
         """
 
         # turn into lambda compatible with numpy
@@ -34,7 +35,7 @@ class CalculusEngine:
         def constant_safe(*values):
             """
             Constant-safe lambdify wrapper
-            :param *values: Variables of functions 
+            :param *values: Variables of functions
             """
 
             # broadcast result over initial shape of values
@@ -58,6 +59,7 @@ class CalculusEngine:
         :param variables: Symbols implicated in function
         :param function: Sympy symbolic function
         :param to_differentiate: Array of variables to differentiate
+        :return: Lambda representation of partial derivative
         """
 
         # differentiate symbolically with respect to variables
@@ -96,6 +98,7 @@ class CalculusEngine:
         Returns base function
 
         :param symbolic: Symbolic or lambda representation
+        :return: Internal math function
         """
 
         if symbolic:
@@ -109,6 +112,7 @@ class CalculusEngine:
         :param variable: Variable differentiated with respect to
         :param order: Order of partial derivative
         :param symbolic: Symbolic or lambda representation
+        :return: Internal math function partial derivative
         """
 
         # bound the order of derivatives
@@ -137,6 +141,7 @@ class CalculusEngine:
         Returns mixed partial derivative function
 
         :param symbolic: Symbolic or lambda representation
+        :return: Internal math function mixed derivative
         """
 
         if symbolic:
@@ -146,7 +151,7 @@ class CalculusEngine:
     def _tangent_vec(self, derivative_values, axis):
         """
         Computes tangent vectors to surface given values
-        of derivatives and axis of tangent 
+        of derivatives and axis of tangent
 
         :param derivative_values: Computed values of derivatives of shape (n,)
         :param axis: 0 is x, 1 is y
@@ -167,7 +172,7 @@ class CalculusEngine:
     def build_normals(self, point_mesh):
         """
         Computes normal vectors to surface given points
-        at which normal is evaluated
+        at which normals are evaluated
 
         :param point_mesh: Array of points of shape (n, 2)
         :return: Normal vectors of shape (n, 3)
@@ -195,6 +200,7 @@ class CalculusEngine:
         :return: Value of function of shape (n,)
         """
 
+        # compute z = f(x, y) for all points
         return self._f_l(*point_mesh.T)
 
     def _build_hessian(self, point_mesh):
@@ -205,7 +211,7 @@ class CalculusEngine:
         :return: Hessian matrices at points of shape (n, 2, 2)
         """
         # the formula from
-        # https://en.wikipedia.org/wiki/Hessian_matrix 
+        # https://en.wikipedia.org/wiki/Hessian_matrix
         # and my understanding built from
         # https://math.stackexchange.com/questions/4750978/second-order-directional-derivative-better-understending
 
@@ -298,46 +304,49 @@ class CalculusEngine:
         symbols = self.x, self.y
 
         # catch all possible exceptions thrown by parser
-        # not best practice, but I didn't have time to 
+        # not best practice, but I didn't have time to
         # look through the documentation to find which
         # specific ones sp.sympify can throw
         try:
             self._f = self._parse_function(equation)
         except Exception as e:
-            return str(e)
+            return f"Parsing failed:\n{str(e)}"
 
         # compute symbolic and lambda equivalent
         # of base function and its derivatives
 
-        self._f_l = self._function_lambda(symbols, self._f)
+        try:
+            self._f_l = self._function_lambda(symbols, self._f)
 
-        self._fx_l, self._fx = self._partial_derivative_lambda(
-            symbols,
-            self._f,
-            [self.x],
-        )
-        self._fxx_l, self._fxx = self._partial_derivative_lambda(
-            symbols,
-            self._fx,
-            [self.x],
-        )
+            self._fx_l, self._fx = self._partial_derivative_lambda(
+                symbols,
+                self._f,
+                [self.x],
+            )
+            self._fxx_l, self._fxx = self._partial_derivative_lambda(
+                symbols,
+                self._fx,
+                [self.x],
+            )
 
-        self._fy_l, self._fy = self._partial_derivative_lambda(
-            symbols,
-            self._f,
-            [self.y],
-        )
-        self._fyy_l, self._fyy = self._partial_derivative_lambda(
-            symbols,
-            self._fy,
-            [self.y],
-        )
+            self._fy_l, self._fy = self._partial_derivative_lambda(
+                symbols,
+                self._f,
+                [self.y],
+            )
+            self._fyy_l, self._fyy = self._partial_derivative_lambda(
+                symbols,
+                self._fy,
+                [self.y],
+            )
 
-        self._fxy_l, self._fxy = self._partial_derivative_lambda(
-            symbols, self._fy, [self.x, self.y]
-        )
+            self._fxy_l, self._fxy = self._partial_derivative_lambda(
+                symbols, self._fy, [self.x, self.y]
+            )
+        except Exception as e:
+            return f"Derivation failed:\n{str(e)}"
 
-        return ""
+        return "Parsed sucessfully"
 
     def pretty_print(self, function):
         """
