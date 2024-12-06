@@ -33,6 +33,37 @@ The *Evaluate* button will plot the function entered within the *Expression* tex
 
 ## Installation
 
+### Option 1 (recommended): With Python 3.11
+
+Clone source code
+```bash
+git clone https://github.com/ThatAquarel/joule.git
+cd joule/
+```
+
+Install `imgui` via prebuilt wheel (saves compilation and installation of Visual C++ 14.0).
+```bash
+py -3.11 -m pip install wheels/imgui-2.0.0-cp311-cp311-win_amd64.whl
+```
+
+Install remaining dependencies
+```bash
+py -3.11 -m pip install -r requirements.txt
+```
+
+Install local package `joule`
+
+```bash
+py -3.11 -m pip install -e .
+```
+
+Run program
+
+```bash
+py -3.11 -m joule
+```
+
+### Option 2: General steps
 Clone source code
 ```bash
 git clone https://github.com/ThatAquarel/joule.git
