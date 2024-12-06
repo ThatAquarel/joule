@@ -39,7 +39,7 @@ git clone https://github.com/ThatAquarel/joule.git
 cd joule/
 ```
 
-Install requirements and install Joule as a local package. Sometimes, the installation of `imgui[glfw]` on Windows throws an error: install Visual C++ Redistributable as per the error message and then directly run `pip install imgui[glfw]`. Also, developed on Python 3.11.
+Install requirements and install Joule as a local package. **Tested on Python 3.11 and Python 3.8** as `imgui[glfw]` fails to compile on recent versions. Sometimes, the installation of `imgui[glfw]` on Windows for recent versions requires [Visual C++ 14.0](https://visualstudio.microsoft.com/visual-cpp-build-tools/) as per the error message, and then directly run `pip install imgui[glfw]`.
 ```bash
 pip install -r requirements.txt
 pip install -e .
