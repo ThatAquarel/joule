@@ -49,3 +49,36 @@ Run application
 ```bash
 python -m joule
 ```
+
+## Codebase and Project Requirements
+
+Here is specific guidance for navigating the code, and notable examples of every requirement:
+
+- Student-made Functions: [Linear Algebra Helpers](./joule/compute/linalg.py) and [OpenGL Vertex Array Object Allocation](./joule/graphics/vbo.py)
+- Import and use of at least one library: [Sympy for Calculus and Differentiation](./joule/compute/calculus.py)
+- Loops: [Main Render Loop](./joule/app.py) and [Balls Rendering](./joule/graphics/elements/ball.py)
+- Data structures: [Extensive Use of Numpy Arrays and Vectorized Operations in Physics](./joule/compute/mechanics.py)
+
+File structure:
+
+- `joule/`: *Joule* Python package root
+    - `__main__.py`: Program main entrypoint called by `python -m joule`
+    - `app.py`: Main application logic and class
+
+- `joule/compute/`: Physics, Calculus and Linear Algebra computation module
+    - `calculus.py`: Calculus and differentiation
+    - `mechanics.py`: Physics, simulation and integration
+    - `linalg.py`: Linear algebra helper functions
+
+- `joule/graphics/`: Graphics and rendering
+    - `orbit_controls.py`: Camera view mouse control
+    - `parameter_interface.py`: User interface implementation and parameter state management
+    - `shader_renderer.py`: Shader accelerated rendering engine
+    - `shaders/`: GPU acceleration shaders
+        - `vertex.glsl`: OpenGL Vertex Shader for coordinate transformation
+        - `fragment.glsl`: OpenGL Fragment Shader for color
+    - `vbo.py`: OpenGL Vertex Buffer Object helper functions
+    - `elements/`: Rendered visual elements
+        - `axes.py`: Axis gridlines
+        - `ball.py`: Balls
+        - `surface.py`: Surface
