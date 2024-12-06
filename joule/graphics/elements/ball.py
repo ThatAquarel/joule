@@ -5,7 +5,7 @@ from OpenGL.GL import GL_TRIANGLE_STRIP
 
 from joule.compute.calculus import CalculusEngine
 from joule.compute.linalg import column_wise
-from joule.graphics.vbo import create_vbo, draw_vbo, update_vbo
+from joule.graphics.vbo import create_vao, draw_vao, update_vbo
 
 
 def generate_sphere_vertices_fast(radius, res):
@@ -42,7 +42,7 @@ class Ball:
         self.data[:, 3:6] = initial_color
         self.data[:, 6:9] = vertices
 
-        self.vao, self.vbo = create_vbo(self.data, return_vbo=True, store_normals=True)
+        self.vao, self.vbo = create_vao(self.data, return_vbo=True, store_normals=True)
 
     def _draw_ball(self, r, s):
         # TODO: Remove this redundant memcopy
@@ -50,7 +50,7 @@ class Ball:
         data[:, :3] = data[:, :3] * r + s
 
         update_vbo(self.vbo, data)
-        draw_vbo(self.vao, GL_TRIANGLE_STRIP, self.n)
+        draw_vao(self.vao, GL_TRIANGLE_STRIP, self.n)
 
     def set_color(self, new_color):
         self.data[:, 3:6] = new_color

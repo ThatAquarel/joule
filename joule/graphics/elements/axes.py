@@ -1,6 +1,6 @@
 import numpy as np
 
-from joule.graphics.vbo import create_vbo, draw_vbo
+from joule.graphics.vbo import create_vao, draw_vao
 
 from OpenGL.GL import *
 
@@ -53,7 +53,7 @@ class Axes:
             dtype=np.float32,
         )
 
-        return create_vbo(data), 6
+        return create_vao(data), 6
 
     def _build_scaled_gridlines(self, s_div, s_min, s_max):
         grid = np.mgrid[0:2, 0 : 1 : (s_div + 1) * 1j, 0:1].T
@@ -73,12 +73,12 @@ class Axes:
         axes_s += offset
         vbo_data = self._build_gridline_color(axes_s)
 
-        return create_vbo(vbo_data), len(axes_s)
+        return create_vao(vbo_data), len(axes_s)
 
     def draw(self):
         glLineWidth(0.25)
-        draw_vbo(self.x_vbo, GL_LINES, self.x_n)
-        draw_vbo(self.y_vbo, GL_LINES, self.y_n)
+        draw_vao(self.x_vbo, GL_LINES, self.x_n)
+        draw_vao(self.y_vbo, GL_LINES, self.y_n)
 
         glLineWidth(2.0)
-        draw_vbo(self.axes_vbo, GL_LINES, self.axes_n)
+        draw_vao(self.axes_vbo, GL_LINES, self.axes_n)

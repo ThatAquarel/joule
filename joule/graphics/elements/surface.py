@@ -1,7 +1,7 @@
 import numpy as np
 from OpenGL.GL import *
 
-from joule.graphics.vbo import create_vbo, draw_vbo, update_vbo
+from joule.graphics.vbo import create_vao, draw_vao, update_vbo
 
 
 class Surface:
@@ -14,7 +14,7 @@ class Surface:
 
         self._data[:, 3:6] = initial_color
 
-        self._vao, self._vbo = create_vbo(
+        self._vao, self._vbo = create_vao(
             self._data,
             return_vbo=True,
             store_normals=True,
@@ -76,4 +76,4 @@ class Surface:
         if not self.ready:
             return
 
-        draw_vbo(self._vao, GL_TRIANGLE_STRIP, self._n)
+        draw_vao(self._vao, GL_TRIANGLE_STRIP, self._n)
