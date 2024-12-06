@@ -27,6 +27,12 @@ The interface is more intuitive with a mouse:
 - Scrollwheel: Zoom in/out view
 
 The *Expression* textbox takes any function f(x, y) that can be evaluated over the selected domain.
+Here are some examples functions to test:
+
+- Paraboloid: `0.25 * (x*x + y*y)`
+- Hemisphere: `-sqrt(pi**2 - x*x - y*y) + pi`
+- Gaussian Function: `-2 * exp(-(x**2 + y**2) / pi) + 2`
+- Cosine Well (larger domain works best): `-cos(2 * sqrt(x*x + y*y))`
 
 The *Evaluate* button will plot the function entered within the *Expression* textbox
 
