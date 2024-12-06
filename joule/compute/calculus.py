@@ -312,6 +312,18 @@ class CalculusEngine:
         except Exception as e:
             return f"Parsing failed:\n{str(e)}"
 
+        # check if expression is written with respect to
+        # x and y before differentiation
+        expr_symbols = set(self._f.free_symbols)
+        allowed_symbols = set({self.x, self.y})
+
+        if not expr_symbols.issubset(allowed_symbols):
+            error_string = "Function f(x, y) should be written with respect to x and y"
+            extra = expr_symbols.difference(allowed_symbols)
+            disallowed = f"symbols: {extra} disallowed"
+
+            return f"{error_string}\n{disallowed}"
+
         # compute symbolic and lambda equivalent
         # of base function and its derivatives
 
