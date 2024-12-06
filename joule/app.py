@@ -238,6 +238,15 @@ class App(CameraOrbitControls, ShaderRenderer):
         rh = self.get_right_handed()
         x, y, _ = self.get_click_point(window, rh)
 
+        x_min, x_max = self.ui.x_domain_slider
+        y_min, y_max = self.ui.y_domain_slider
+
+        x_check = x_min < x < x_max
+        y_check = y_min < y < y_max
+
+        if not (x_check and y_check):
+            return
+
         # evaluate function at click point
         point_mesh = np.array([[x, y]])
         (z,) = self.calculus_engine.build_values(point_mesh)
