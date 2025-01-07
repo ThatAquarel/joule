@@ -4,11 +4,14 @@
 
 Final Project for **Programming in Science, section 00007**
 
-![demo](docs/demo.PNG)
+## Simulation
 
+
+![Function 1](docs/ball_drop.gif)
+
+![Function 2](docs/ball_drop_cos.gif)
 
 ## Author
-
 
 Alex Xia<sup>1</sup>
 
@@ -119,3 +122,11 @@ File structure:
         - `axes.py`: Axis gridlines
         - `ball.py`: Balls
         - `surface.py`: Surface
+
+## Screenshots
+
+![demo](docs/demo.PNG)
+
+![demo](docs/cos.PNG)
+
+![demo](docs/sin_xy.PNG)
